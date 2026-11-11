@@ -1,0 +1,27 @@
+{
+  "name": "diracord-monorepo",
+  "private": true,
+  "description": "Diracord: uma linguagem de texto para bots de Discord. Monorepo (Rust + TypeScript).",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/config",
+    "packages/engine",
+    "packages/discord",
+    "packages/cli",
+    "packages/diracord"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test \"packages/*/test/*.test.ts\"",
+    "build:engine": "cargo build --release -p diracord-engine",
+    "diracord": "node packages/cli/src/main.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

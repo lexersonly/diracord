@@ -1,0 +1,13 @@
+{
+  "name": "@diracord/discord",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@diracord/engine": "0.1.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "diracord",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Diracord: crie bots de Discord com uma linguagem simples. (Ainda não publicado.)",
+  "license": "MIT",
+  "type": "module",
+  "bin": { "diracord": "./src/bin.ts" },
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@diracord/cli": "0.1.0",
+    "@diracord/config": "0.1.0",
+    "@diracord/engine": "0.1.0",
+    "@diracord/discord": "0.1.0"
+  }
+}
