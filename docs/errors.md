@@ -96,6 +96,14 @@ break e continue só funcionam dentro de for ou while.
 
 Já existe outro comando ou interação com esse nome. Renomeie um deles.
 
+### E0117 — componente fora do lugar
+
+Esse componente não pode ficar aí. Botões e menus vão em `row`; `thumbnail` vai em `section`; `container` só no topo do layout.
+
+### E0118 — componente desconhecido
+
+Dentro de `layout { }` valem: container, section, row, text, thumbnail, separator, gallery, file, button, menu, além de local, if e for.
+
 ## Execução
 
 ### E0200 — variável não existe

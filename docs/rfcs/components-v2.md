@@ -1,7 +1,8 @@
 # RFC: sintaxe do layout de Components v2
 
-> Status: **aberto** (SPEC §4.6: "Components v2 terá uma mini-linguagem própria de layout").
-> Nada disto está implementado. O dono escolhe uma proposta (ou mistura) antes do código.
+> Status: **decidido em 2026-11-11**: **A + B**. A palavra é `layout`, e componentes sem
+> bloco aceitam opções nomeadas (`separator(spacing: "large")`). Implementado; guia em
+> [docs/language.md](../language.md#components-v2).
 
 ## Contexto
 
@@ -115,8 +116,11 @@ Leia as regras antes de continuar. {thumbnail $user.avatar}
 **A**, com **B** aceito como forma "crua" (útil para IAs e para quem vem de JSON):
 as duas geram a mesma árvore, e o `check` valida as duas.
 
-## Perguntas para o dono
+## Decisão
 
-1. Qual proposta? (A / B / C / A+B)
-2. A palavra para abrir o layout: `layout`, `components` ou `ui`?
-3. Os componentes sem `{ }` (como `separator`) podem ter opções? Ex.: `separator(spacing: "large")`.
+1. Proposta: **A + B**.
+2. Palavra: **`layout`**.
+3. Componentes sem bloco aceitam **opções nomeadas**.
+
+Na forma B, a seção usa `section: [textos]` e o acessório vai ao lado
+(`thumbnail: url` ou `button: { ... }`); a linha usa `row: [...]`.

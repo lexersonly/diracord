@@ -55,8 +55,7 @@ menu("cor") {
 }
 ```
 
-> Criar os botões e menus na mensagem é parte do **Components v2**, ainda em aberto:
-> veja [rfcs/components-v2.md](rfcs/components-v2.md).
+Os botões e menus são criados na mensagem com o layout do [Components v2](#components-v2).
 
 ## Chamadas com e sem parênteses
 
@@ -163,6 +162,96 @@ command("perfil") {
 }
 ```
 
+## Components v2
+
+O layout novo do Discord (caixas, textos, imagens, botões e menus) é escrito em blocos,
+aberto pela palavra `layout`:
+
+```dcs
+command("regras") {
+  reply layout {
+    container(color: "purple") {
+      text "## Bem-vindo, $user.name"
+      section {
+        text "Leia as regras antes de continuar."
+        thumbnail "https://cdn.discordapp.com/embed/avatars/0.png"
+      }
+      separator(spacing: "large")
+      row {
+        button("aceitar", "Aceito", style: "success")
+        button("recusar", "Não aceito", style: "danger")
+      }
+    }
+  }
+}
+
+button("aceitar") {
+  addRole user "Membro"
+  reply "Bem-vindo!" ephemeral: true
+}
+
+button("recusar") {
+  reply "Tudo bem." ephemeral: true
+}
+```
+
+Dentro do layout valem `local`, `if` e `for`:
+
+```dcs
+command("cores") {
+  local cores = ["Azul", "Verde", "Roxo"]
+  reply layout {
+    text "Escolha uma cor:"
+    row {
+      menu("cor", cores, placeholder: "Clique aqui")
+    }
+    if len(cores) > 2 {
+      local n = len(cores)
+      separator
+      text "-# são $n opções"
+    }
+  }
+}
+
+menu("cor") {
+  reply "Você escolheu " + join(message.values) ephemeral: true
+}
+```
+
+| componente | onde | argumentos |
+|---|---|---|
+| `container { }` | topo | `color?`, `spoiler?` |
+| `section { }` | topo ou container | 1–3 `text` + um `thumbnail` ou `button` |
+| `row { }` | topo ou container | até 5 `button`, ou um `menu` |
+| `text` | topo, container, section | `content` (markdown) |
+| `thumbnail` | section | `url`, `description?`, `spoiler?` |
+| `separator` | topo ou container | `spacing?` ("small"/"large"), `line?` |
+| `gallery` | topo ou container | `items` (1–10 urls) |
+| `file` | topo ou container | `url` ("attachment://..."), `spoiler?` |
+| `button` | row ou section | `id?`, `label?`, `style?`, `emoji?`, `disabled?`, `url?` |
+| `menu` | row | `id`, `options`, `placeholder?`, `min?`, `max?` |
+
+Componentes sem bloco aceitam opções pelo nome: `separator(spacing: "large", line: false)`.
+Com `url:` o botão é um link: `button(label: "Site", url: "https://...")`.
+
+A mesma mensagem também pode ser escrita como objeto (útil para montar por código):
+
+```dcs
+command("oi") {
+  reply {
+    layout: [
+      { container: [
+          { text: "## Oi" },
+          { row: [{ button: "aceitar", label: "Aceito", style: "success" }] }
+        ], color: "purple" }
+    ]
+  }
+}
+```
+
+Erros comuns: botão fora de `row` (E0117), `section` sem acessório, nome errado
+(`txet` → `text`, E0118). Tudo é conferido pelo `check` e antes de enviar.
+
 ## Dados salvos
 
 ```dcs
@@ -188,5 +277,5 @@ Cada execução tem limite de passos, tempo, memória e ações no Discord (veja
 
 ## Ainda em aberto
 
-Funções próprias (`fn`), layout do Components v2, nome do `try/catch`, alias `guild`,
+Funções próprias (`fn`), nome do `try/catch`, alias `guild`,
 formato final do Dirabank. Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).

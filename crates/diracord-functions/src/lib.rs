@@ -20,6 +20,7 @@
 mod args;
 mod builtins;
 mod effect;
+pub mod layout;
 mod registry;
 mod spec;
 

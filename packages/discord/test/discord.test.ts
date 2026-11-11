@@ -204,3 +204,80 @@ test("!ping end to end: gateway message → engine → REST reply", async () => 
     await engine.close();
   }
 });
+
+test("components v2: layout object → Discord components", () => {
+  const body = messageBody(
+    {
+      layout: [
+        {
+          container: [
+            { text: "## Oi" },
+            { section: ["Leia"], thumbnail: { url: "https://x/a.png", description: "logo" } },
+            { separator: true, spacing: "large", line: false },
+            { row: [{ button: "ok", label: "Ok", style: "success", emoji: "👍" }, { button: null, label: "Site", url: "https://a.b" }] },
+            { row: [{ menu: "cor", options: ["Azul", { label: "Verde", value: "g" }], placeholder: "Escolha" }] },
+          ],
+          color: "purple",
+        },
+        { gallery: ["https://x/1.png"] },
+      ],
+    },
+    { ephemeral: true },
+  );
+  assert.equal(body["flags"], (1 << 15) | 64);
+  assert.equal(body["content"], undefined);
+  assert.deepEqual(body["components"], [
+    {
+      type: 17,
+      accent_color: 0x9b59b6,
+      components: [
+        { type: 10, content: "## Oi" },
+        { type: 9, components: [{ type: 10, content: "Leia" }], accessory: { type: 11, media: { url: "https://x/a.png" }, description: "logo" } },
+        { type: 14, spacing: 2, divider: false },
+        {
+          type: 1,
+          components: [
+            { type: 2, style: 3, custom_id: "ok", label: "Ok", emoji: { name: "👍" } },
+            { type: 2, style: 5, url: "https://a.b", label: "Site" },
+          ],
+        },
+        {
+          type: 1,
+          components: [
+            { type: 3, custom_id: "cor", placeholder: "Escolha", options: [{ label: "Azul", value: "Azul" }, { label: "Verde", value: "g" }] },
+          ],
+        },
+      ],
+    },
+    { type: 12, items: [{ media: { url: "https://x/1.png" } }] },
+  ]);
+});
+
+test("components v2 end to end: layout block → engine → REST body", async () => {
+  const engine = await EngineClient.start();
+  try {
+    const src = 'command("menu") {\n  reply layout {\n    text "Escolha:"\n    row {\n      button("a", "A")\n      button("b", "B", style: "danger")\n    }\n  }\n}\nbutton("a") { reply "A!" }';
+    const loaded = await engine.load([{ path: "m.dcs", source: src }]);
+    assert.equal(loaded.ok, true, loaded.rendered);
+    const { fetch, calls } = fakeFetch(() => ({ body: { id: "m2", channel_id: "c1" } }));
+    const rest = new Rest("T", fetch);
+    const host = new DiscordHost(rest, new NameCache(rest));
+    const { onAction } = host.forRun({ guildId: "g", channelId: "c1", messageId: "m1", interaction: null });
+    const r = await engine.dispatch({ kind: "command", name: "menu" }, {}, onAction);
+    assert.equal(r.ok, true);
+    const body = calls[0]?.body as Record<string, unknown>;
+    assert.equal(body["flags"], 1 << 15);
+    assert.deepEqual(body["components"], [
+      { type: 10, content: "Escolha:" },
+      {
+        type: 1,
+        components: [
+          { type: 2, style: 1, custom_id: "a", label: "A" },
+          { type: 2, style: 4, custom_id: "b", label: "B" },
+        ],
+      },
+    ]);
+  } finally {
+    await engine.close();
+  }
+});

@@ -42,6 +42,7 @@ mod eval;
 mod exec;
 mod executor;
 mod host;
+mod layout;
 mod limits;
 pub mod testing;
 

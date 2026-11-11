@@ -100,6 +100,7 @@ impl<'r> Machine<'r> {
                     let i = self.eval(index).await?;
                     index_value(v, &i, e.span)
                 }
+                ExprKind::Layout(l) => self.eval_layout(l).await,
                 ExprKind::Call { callee, args, .. } => {
                     let Some(id) = callee.as_ident() else {
                         return Err(RuntimeError::new(

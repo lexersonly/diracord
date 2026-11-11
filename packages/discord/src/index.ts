@@ -9,6 +9,7 @@ export { Gateway, type GatewayOptions, type SocketFactory, type SocketLike } fro
 export { Rest, DiscordError, API, bucketPath, type FetchLike, type RequestOptions } from "./rest.ts";
 export { NameCache, idOf } from "./cache.ts";
 export { messageBody, embed, color } from "./content.ts";
+export { component, emoji, layoutBody, IS_COMPONENTS_V2 } from "./components.ts";
 export { parsePrefix, slashArgs, slashCommands, splitArgs, validSlashName, type PrefixInvocation } from "./commands.ts";
 export { intentBits, INTENT_BITS } from "./intents.ts";
 export * as entities from "./entities.ts";

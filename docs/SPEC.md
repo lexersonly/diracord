@@ -95,8 +95,19 @@ try { ban user } catch err { reply "Falhou: $err" }
 
 ### 4.6 Respostas, embeds e Components v2
 - Embed como objeto estilo JSON: `reply { title: "Oi", color: "red" }`.
-- **[ABERTO]** Components v2 terá uma **mini-linguagem própria** de layout.
-  Escrever 3 propostas em `docs/rfcs/components-v2.md` para o dono escolher.
+- Components v2 (decidido em 2026-11-11, ver `docs/rfcs/components-v2.md`): layout em
+  **blocos** aberto pela palavra `layout` (proposta A), com `if`/`for`/`local` dentro, e a
+  forma **objeto** `{ layout: [...] }` (proposta B) aceita também. As duas geram a mesma árvore.
+  Componentes sem bloco aceitam opções nomeadas: `separator(spacing: "large")`.
+  ```
+  reply layout {
+    container(color: "purple") {
+      text "## Bem-vindo, $user.name"
+      separator
+      row { button("aceitar", "Aceito", style: "success") }
+    }
+  }
+  ```
 
 ### 4.7 Funções próprias
 ```
@@ -154,7 +165,6 @@ ligados por configuração depois.
 Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 
 ## 10. Decisões em aberto (resumo)
-- Sintaxe do layout Components v2.
 - Nome do tratamento de erro (`try/catch` vs `testing`).
 - Sintaxe das funções próprias.
 - Alias `guild` para `server`.

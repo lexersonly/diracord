@@ -50,7 +50,54 @@ fn sx(e: &Expr) -> String {
                 format!("({} {})", sx(callee), a.join(" "))
             }
         }
+        ExprKind::Layout(l) => format!("(layout {})", sx_layout(l)),
     }
+}
+
+fn sx_layout(l: &Layout) -> String {
+    let items: Vec<String> = l
+        .items
+        .iter()
+        .map(|i| match &i.kind {
+            LayoutItemKind::Element {
+                kind,
+                args,
+                children,
+                ..
+            } => {
+                let mut out = kind.as_str().to_string();
+                for a in args {
+                    out += " ";
+                    if let Some(n) = &a.name {
+                        out += &format!("{}:", n.name);
+                    }
+                    out += &sx(&a.value);
+                }
+                if let Some(c) = children {
+                    out += &format!(" {}", sx_layout(c));
+                }
+                out
+            }
+            LayoutItemKind::Local { name, value } => format!("local {} {}", name.name, sx(value)),
+            LayoutItemKind::If {
+                branches,
+                otherwise,
+            } => {
+                let mut out = "if".to_string();
+                for b in branches {
+                    out += &format!(" {} {}", sx(&b.cond), sx_layout(&b.body));
+                }
+                if let Some(o) = otherwise {
+                    out += &format!(" else {}", sx_layout(o));
+                }
+                out
+            }
+            LayoutItemKind::For { var, iter, body } => {
+                format!("for {} {} {}", var.name, sx(iter), sx_layout(body))
+            }
+        })
+        .collect();
+    format!("[{}]", items.join("; "))
 }
 
 fn sx_stmt(s: &Stmt) -> String {
@@ -417,4 +464,67 @@ fn every_node_has_a_span_inside_the_source() {
         assert!(!s.span.is_empty());
     }
     assert_eq!(&src[c.params[0].span.range()], "user: member");
+}
+
+#[test]
+fn layout_block_syntax() {
+    let src = r###"reply layout {
+  container(color: "purple") {
+    text "## Bem-vindo, $user.name"
+    section {
+      text "Leia as regras."
+      thumbnail user.avatar
+    }
+    separator(spacing: "large")
+    if vip {
+      text "VIP!"
+    } else {
+      separator
+    }
+    row {
+      for o in opcoes {
+        button(o, o)
+      }
+      button("recusar", "Não", style: "danger")
+    }
+  }
+}"###;
+    assert_eq!(
+        body(src),
+        "(reply (layout [container color:\"purple\" [text (tpl \"## Bem-vindo, \" user.name); section [text \"Leia as regras.\"; thumbnail user.avatar]; separator spacing:\"large\"; if vip [text \"VIP!\"] else [separator]; row [for o opcoes [button o o]; button \"recusar\" \"Não\" style:\"danger\"]]]))"
+    );
+}
+
+#[test]
+fn layout_is_still_a_normal_name_elsewhere() {
+    assert_eq!(
+        body("local layout = 1\nreply layout"),
+        "(local layout 1)\n(reply layout)"
+    );
+    assert_eq!(
+        body("local l = layout { text \"a\" }\nreply l"),
+        "(local l (layout [text \"a\"]))\n(reply l)"
+    );
+}
+
+#[test]
+fn layout_placement_errors() {
+    let wrap = |inner: &str| format!("command(\"a\") {{ reply layout {{\n{inner}\n}} }}");
+    assert_eq!(codes_of(&wrap("button(\"x\", \"X\")")), [codes::E0117]);
+    assert_eq!(
+        codes_of(&wrap("container { thumbnail \"u\" }")),
+        [codes::E0117]
+    );
+    assert_eq!(
+        codes_of(&wrap("container { container { } }")),
+        [codes::E0117]
+    );
+    assert_eq!(codes_of(&wrap("txet \"a\"")), [codes::E0118]);
+    assert_eq!(codes_of(&wrap("row")), [codes::E0105]);
+    assert_eq!(
+        codes_of(&wrap("row { button(\"x\", \"X\") { reply \"a\" } }")),
+        [codes::E0100]
+    );
+    let out = parse(&wrap("txet \"a\""), &ParseOptions::default());
+    assert!(out.diagnostics[0].help.iter().any(|h| h.contains("`text`")));
 }

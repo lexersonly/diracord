@@ -4,9 +4,21 @@ use crate::{Bound, FnError};
 use diracord_value::Value;
 use std::cell::Cell;
 
-/// Message content: text (numbers/bools become text) or an embed object.
+/// Message content: text (numbers/bools become text), an embed object, or a
+/// Components v2 layout (`{ layout: [...] }`, also what `layout { }` builds).
 pub(crate) fn content(b: &Bound, i: usize) -> Result<Value, FnError> {
     match b.get(i) {
+        v @ Value::Object(_) if crate::layout::is_layout(v) => match crate::layout::validate(v) {
+            Ok(()) => Ok(v.clone()),
+            Err(e) => Err(FnError::new(
+                diracord_diagnostics::codes::E0117,
+                format!("Layout inválido em {}: {}", e.path, e.message),
+            )
+            .at(crate::ArgRef::Param(i))
+            .with_help(
+                "veja os componentes e onde cada um pode ficar em docs/language.md#components-v2",
+            )),
+        },
         v @ Value::Object(_) => Ok(v.clone()),
         Value::Text(s) if s.is_empty() => Err(b.wrong(
             i,

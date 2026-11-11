@@ -485,3 +485,102 @@ fn checker_fixes() {
         "memberJoin { reply \"oi\" }"
     );
 }
+
+// ---- Components v2 ----
+
+fn reply_value(src: &str) -> Value {
+    let mut host = TestHost::new();
+    run(
+        &engine(src),
+        Trigger::command("t"),
+        &mut host,
+        &mut MemoryStore::new(),
+    )
+    .unwrap();
+    host.actions()[0].args[0].clone()
+}
+
+#[test]
+fn layout_block_builds_the_object_form() {
+    let a = r###"command("t") {
+  local opcoes = ["sim", "talvez"]
+  reply layout {
+    container(color: "purple") {
+      text "## Oi $user.name"
+      section {
+        text "Leia as regras."
+        thumbnail "https://x/a.png" description: "logo"
+      }
+      separator(spacing: "large")
+      if len(opcoes) > 5 {
+        text "muitas"
+      }
+      row {
+        for o in opcoes {
+          button(o, upper(o))
+        }
+        button(label: "Site", url: "https://diracord.dev")
+      }
+    }
+  }
+}"###;
+    let b = r###"command("t") {
+  reply {
+    layout: [
+      { container: [
+          { text: "## Oi Ana" },
+          { section: ["Leia as regras."], thumbnail: { url: "https://x/a.png", description: "logo" } },
+          { separator: true, spacing: "large" },
+          { row: [
+              { button: "sim", label: "SIM" },
+              { button: "talvez", label: "TALVEZ" },
+              { button: null, label: "Site", url: "https://diracord.dev" }
+          ] }
+        ], color: "purple" }
+    ]
+  }
+}"###;
+    assert_eq!(reply_value(a), reply_value(b));
+}
+
+#[test]
+fn invalid_layouts_are_explained() {
+    let src = "command(\"t\") { reply { layout: [{ button: \"x\", label: \"X\" }] } }";
+    assert_eq!(err_code(src, Trigger::command("t")), codes::E0117);
+    let mut host = TestHost::new();
+    let e = run(
+        &engine(src),
+        Trigger::command("t"),
+        &mut host,
+        &mut MemoryStore::new(),
+    )
+    .unwrap_err();
+    assert!(
+        e.diagnostic.message.contains("dentro de `row`"),
+        "{}",
+        e.diagnostic.message
+    );
+    let two = "command(\"t\") { reply layout { section { text \"a\"\n thumbnail \"https://a\"\n button(\"b\", \"B\") } } }";
+    assert_eq!(err_code(two, Trigger::command("t")), codes::E0117);
+}
+
+#[test]
+fn checker_checks_layout_arguments() {
+    assert!(check_codes(
+        "command(\"a\") { reply layout { separator(spacing: \"large\", line: false) } }"
+    )
+    .is_empty());
+    assert_eq!(
+        check_codes("command(\"a\") { reply layout { separator(spacng: \"large\") } }"),
+        [codes::E0303]
+    );
+    assert_eq!(
+        check_codes("command(\"a\") { reply layout { text } }"),
+        [codes::E0300]
+    );
+    assert_eq!(
+        check_codes("command(\"a\") { reply layout { text nada } }"),
+        [codes::E0200]
+    );
+    assert!(check_codes("command(\"a\") { reply layout { row { for i in range(3) { button(toText(i), \"B\") } } } }").is_empty());
+}

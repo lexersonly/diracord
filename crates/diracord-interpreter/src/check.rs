@@ -273,7 +273,54 @@ impl Checker<'_> {
                 self.expr(index);
             }
             ExprKind::Call { callee, args, .. } => self.call(callee, args, e.span),
+            ExprKind::Layout(l) => self.layout(l),
         }
+    }
+
+    fn layout(&mut self, l: &diracord_ast::Layout) {
+        use diracord_ast::LayoutItemKind as K;
+        self.scopes.push(Vec::new());
+        for item in &l.items {
+            match &item.kind {
+                K::Local { name, value } => {
+                    self.expr(value);
+                    self.declare(&name.name);
+                }
+                K::If {
+                    branches,
+                    otherwise,
+                } => {
+                    for b in branches {
+                        self.expr(&b.cond);
+                        self.layout(&b.body);
+                    }
+                    if let Some(o) = otherwise {
+                        self.layout(o);
+                    }
+                }
+                K::For { var, iter, body } => {
+                    self.expr(iter);
+                    self.scopes.push(vec![var.name.clone()]);
+                    self.layout(body);
+                    self.scopes.pop();
+                }
+                K::Element {
+                    kind,
+                    args,
+                    children,
+                    ..
+                } => {
+                    if let Err(e) = crate::layout::bind_names(*kind, args, item.span) {
+                        self.diags.push(*e.diagnostic);
+                    }
+                    args.iter().for_each(|a| self.expr(&a.value));
+                    if let Some(c) = children {
+                        self.layout(c);
+                    }
+                }
+            }
+        }
+        self.scopes.pop();
     }
 
     fn call(&mut self, callee: &Expr, args: &[Arg], span: Span) {

@@ -26,6 +26,7 @@
 mod dollar;
 mod exprs;
 mod items;
+mod layout;
 mod parser;
 mod stmts;
 #[cfg(test)]

@@ -12,7 +12,8 @@ impl Parser<'_> {
     /// An expression, or a call without parentheses (`reply "oi"`).
     /// Used at statement start and after `local x =`, `x =`, `return`.
     pub(crate) fn expr_or_bare(&mut self) -> PResult<Expr> {
-        if self.at_plain_ident() {
+        let is_layout = self.at_word("layout") && self.nth(1).kind == TokenKind::LBrace;
+        if self.at_plain_ident() && !is_layout {
             let next = self.nth(1);
             if !next.newline_before && next.space_before && starts_bare_arg(next, self.nth(2)) {
                 return self.bare_call();
@@ -277,6 +278,15 @@ impl Parser<'_> {
                     )
                     .with_label(t.span, "esperava um valor aqui"),
                 ),
+                "layout"
+                    if allow_obj
+                        && self.nth(1).kind == TokenKind::LBrace
+                        && !self.nth(1).newline_before =>
+                {
+                    let l = self.layout_expr()?;
+                    let span = t.span.to(l.span);
+                    Ok(Expr::new(ExprKind::Layout(l), span))
+                }
                 name => {
                     self.bump();
                     Ok(Expr::new(ExprKind::Name(Ident::new(name, t.span)), t.span))

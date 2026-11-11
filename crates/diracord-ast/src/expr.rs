@@ -1,6 +1,6 @@
 //! Expressions.
 
-use crate::Ident;
+use crate::{Ident, Layout};
 use diracord_diagnostics::Span;
 
 /// An expression.
@@ -79,6 +79,8 @@ pub enum ExprKind {
         /// How it was written (for messages and formatting only; meaning is the same).
         style: CallStyle,
     },
+    /// `layout { container { ... } }` — a Components v2 layout.
+    Layout(Layout),
 }
 
 /// A literal value.

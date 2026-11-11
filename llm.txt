@@ -93,10 +93,20 @@ postfix     = primary { "." NAME | "[" expr "]" | "(" [ arg { "," arg } [ "," ] 
               (* "[" de índice vem colado: lista[0]. "(" na mesma linha. *)
 primary     = NUMBER | STRING | "true" | "false" | "null" | NAME
             | "(" expr ")" | "[" [ expr { "," expr } [","] ] "]"
-            | object | dollar_call ;
+            | object | dollar_call | layout ;
 object      = "{" { ( NAME | STRING ) ":" expr ( "," | NEWLINE ) } "}" ;
 arg         = [ NAME ":" ] expr ;                      (* argumento nomeado: scope: user *)
 dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] dollar = true *)
+
+(* Components v2. "layout" só é especial quando vem colado a "{"; continua podendo ser nome de variável. *)
+layout      = "layout" lblock ;
+lblock      = "{" { litem ( NEWLINE | ";" ) } "}" ;
+litem       = "local" NAME "=" value
+            | "if" cond lblock { "else" "if" cond lblock } [ "else" lblock ]
+            | "for" NAME "in" cond lblock
+            | element ;
+element     = ELEMENT ( "(" [ arg { "," arg } ] ")" | { arg [ "," ] } ) [ lblock ] ;
+              (* lblock só em container, section e row *)
 ```
 
 ## 4. Regras de significado
@@ -128,6 +138,46 @@ dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] do
   timestamp: true }`. Cores: red green blue blurple yellow orange purple pink white black gray,
   "#rrggbb" ou número.
 - Menções: o bot só menciona usuários (nunca @everyone/@here/cargos).
+
+## 4.1 Components v2 (layout)
+
+Duas formas, que geram a mesma coisa. Forma A (blocos), recomendada:
+```dcs
+command("regras") {
+  reply layout {
+    container(color: "purple") {
+      text "## Bem-vindo, $user.name"
+      section {
+        text "Leia as regras."
+        thumbnail "https://cdn.discordapp.com/embed/avatars/0.png"
+      }
+      separator(spacing: "large")
+      row {
+        button("aceitar", "Aceito", style: "success")
+        button(label: "Site", url: "https://exemplo.com")
+      }
+    }
+  }
+}
+```
+Forma B (objeto), útil para gerar por código:
+`reply { layout: [ { container: [ { text: "## Oi" }, { row: [ { button: "ok", label: "Ok" } ] } ], color: "purple" } ] }`
+
+Componentes (argumentos na ordem; todos também por nome; `?` = opcional):
+- `container(color?, spoiler?) { ... }` — só no topo. Dentro: section, row, text, separator, gallery, file.
+- `section { ... }` — 1 a 3 `text` + exatamente um acessório: `thumbnail` ou `button`.
+- `row { ... }` — até 5 `button`, OU um `menu` sozinho.
+- `text content` — markdown, até 4000 letras.
+- `thumbnail url description? spoiler?` — só dentro de section.
+- `separator(spacing?, line?)` — spacing "small" | "large"; line true/false.
+- `gallery items` — lista de 1 a 10 urls (ou { url, description, spoiler }).
+- `file url spoiler?` — url "attachment://nome".
+- `button(id?, label?, style?, emoji?, disabled?, url?)` — style: primary secondary success danger link.
+  Com `url:` é botão de link e não tem id. Sem url, o id liga ao `button("id") { ... }` do topo do arquivo.
+- `menu(id, options, placeholder?, min?, max?)` — options: lista de textos ou { label, value, description }.
+  O clique roda `menu("id") { ... }`; os escolhidos ficam em `message.values`.
+Dentro do layout também valem `local`, `if` e `for`. Não valem reply/send/while/chain/try.
+Limites do Discord: 40 componentes por mensagem. Layout não se mistura com embed nem com texto solto.
 
 ## 5. Variáveis automáticas
 
@@ -256,6 +306,8 @@ E0113 evento desconhecido
 E0114 código solto
 E0115 break/continue fora de laço
 E0116 nome repetido
+E0117 componente fora do lugar
+E0118 componente desconhecido
 E0200 variável não existe
 E0201 função não existe
 E0202 tipo errado
@@ -306,6 +358,10 @@ E0504 motor não encontrado
 - `break` fora de for/while → `stop` (E0115)
 - `get("x", scope: guild)` → `scope: server` (E0401)
 - `local guild = server` não é necessário: use `server`.
+- `reply layout { button("a", "A") }` → botão precisa de `row { ... }` (E0117)
+- `section { text "a" }` sem acessório → adicione `thumbnail url` ou `button(...)`
+- `row { button("a", "A") { reply "x" } }` → o clique fica fora: `button("a") { reply "x" }` no topo (E0100)
+- `reply layout { txet "a" }` → `text "a"` (E0118, com sugestão)
 - Ids grandes como número (`123456789012345678901`) → use texto `"123..."` (E0003)
 
 ## 12. Exemplos
@@ -355,7 +411,6 @@ button("confirm") {
 ## 13. Ainda NÃO existe (decisões em aberto na SPEC — não use)
 
 - Funções próprias (`fn nome(...) { }`): sintaxe em aberto.
-- Layout de Components v2 (botões/menus no código de envio): veja docs/rfcs/components-v2.md.
 - Nome final de try/catch (`try/catch` é provisório; pode virar `testing`).
 - Alias `guild` para `server`.
 - Formato final do arquivo do Dirabank (o v0 é provisório).

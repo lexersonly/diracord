@@ -52,14 +52,22 @@ export function embed(e: Obj): Obj {
   return out;
 }
 
+import { layoutBody } from "./components.ts";
+
 /**
- * Message body for `reply` / `send`. Mentions are limited to users so code
+ * Message body for `reply` / `send`. Text, an embed object, or a Components v2
+ * layout (`{ layout: [...] }`). Mentions are limited to users so code
  * can never ping @everyone by accident.
  */
 export function messageBody(content: unknown, options: Obj = {}): Obj {
   const body: Obj = { allowed_mentions: { parse: ["users"] } };
-  if (content && typeof content === "object" && !Array.isArray(content)) body["embeds"] = [embed(content as Obj)];
+  let flags = options["ephemeral"] ? 64 : 0;
+  if (content && typeof content === "object" && !Array.isArray(content) && "layout" in content) {
+    const l = layoutBody(content as Obj);
+    body["components"] = l.components;
+    flags |= l.flags;
+  } else if (content && typeof content === "object" && !Array.isArray(content)) body["embeds"] = [embed(content as Obj)];
   else body["content"] = String(content ?? "").slice(0, 2000);
-  if (options["ephemeral"]) body["flags"] = 64;
+  if (flags) body["flags"] = flags;
   return body;
 }
