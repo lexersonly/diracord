@@ -182,9 +182,14 @@ impl Bound {
         match self.opt(i) {
             None | Some(Value::Null) => Ok(None),
             Some(Value::Text(s)) => Scope::from_name(s).map(Some).ok_or_else(|| {
+                let help = if s == "guild" {
+                    "no Diracord, o escopo do servidor é `server`"
+                } else {
+                    "use user, server, member ou global"
+                };
                 FnError::new(codes::E0401, format!("`{s}` não é um escopo"))
                     .at(ArgRef::Param(i))
-                    .with_help("use user, server, member ou global")
+                    .with_help(help)
             }),
             Some(v) => Err(self.wrong(i, "um escopo (user, server, member ou global)", v)),
         }

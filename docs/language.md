@@ -277,4 +277,4 @@ Cada execução tem limite de passos, tempo, memória e ações no Discord (veja
 
 ## Ainda em aberto
 
-Funções próprias (`fn`) e alias `guild`. Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).
+Funções próprias (`fn`). Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).

@@ -236,6 +236,18 @@ impl Checker<'_> {
                         format!("A variável `{}` não existe", id.name),
                     )
                     .with_label(id.span, "variável não criada");
+                    if let Some(to) = known::renamed(&id.name) {
+                        self.diags.push(
+                            d.with_help(format!("no Diracord, o servidor se chama `{to}`"))
+                                .with_fix(Fix::replace(
+                                    format!("trocar `{}` por `{to}`", id.name),
+                                    id.span,
+                                    to,
+                                    true,
+                                )),
+                        );
+                        return;
+                    }
                     let mut candidates: Vec<&str> = names.iter().map(String::as_str).collect();
                     for n in self.registry.names() {
                         candidates.push(n);

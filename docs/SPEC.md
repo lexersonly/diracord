@@ -124,6 +124,8 @@ configuração** em `diracord.toml` (`[syntax] dollar = true`). Pode haver outro
 ### 4.9 Variáveis automáticas
 Dentro de comandos e eventos existem: `user` (alias `author`), `server`, `channel`,
 `message` (alias `interaction` quando for interação).
+Não existe alias `guild` (decidido em 2026-11-11): o nome é sempre `server`. Quem
+escrever `guild` recebe o erro E0200 com correção automática segura para `server`.
 
 ## 5. Erros
 
@@ -171,4 +173,3 @@ Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 
 ## 10. Decisões em aberto (resumo)
 - Sintaxe das funções próprias.
-- Alias `guild` para `server`.

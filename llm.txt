@@ -184,7 +184,7 @@ Limites do Discord: 40 componentes por mensagem. Layout não se mistura com embe
 Dentro de command, eventos e button/menu/modal:
 - `user` (alias `author`): quem disparou. Campos: id, name, username, mention, bot, avatar;
   em servidor também nick, roles (lista de ids), joinedAt.
-- `server`: id, name (null em mensagem privada). NÃO use `guild` (alias ainda em aberto).
+- `server`: id, name (null em mensagem privada). Não existe `guild`: o nome é sempre `server`.
 - `channel`: id, mention (e name, type quando conhecidos).
 - `message`: id, content, channelId, authorId. Em interações, `interaction` = `message`;
   em menus, `message.values` é a lista escolhida.
@@ -358,7 +358,7 @@ E0504 motor não encontrado
 - `chain x { _ => ...  1 => ... }` → `_` sempre por último (E0110)
 - `break` fora de for/while → `stop` (E0115)
 - `get("x", scope: guild)` → `scope: server` (E0401)
-- `local guild = server` não é necessário: use `server`.
+- `guild.name` / `$guild.name` / `scope: guild` → `server` (E0200/E0401, corrigido por --fix)
 - `reply layout { button("a", "A") }` → botão precisa de `row { ... }` (E0117)
 - `section { text "a" }` sem acessório → adicione `thumbnail url` ou `button(...)`
 - `row { button("a", "A") { reply "x" } }` → o clique fica fora: `button("a") { reply "x" }` no topo (E0100)
@@ -412,5 +412,4 @@ button("confirm") {
 ## 13. Ainda NÃO existe (decisões em aberto na SPEC — não use)
 
 - Funções próprias (`fn nome(...) { }`): sintaxe em aberto.
-- Alias `guild` para `server`.
 - Plugins WASM.

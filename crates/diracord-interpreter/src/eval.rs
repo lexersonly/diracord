@@ -170,6 +170,9 @@ impl<'r> Machine<'r> {
             "variável não criada",
         )
         .with_help(format!("crie antes com `local {name} = ...`"));
+        if let Some(to) = diracord_ast::known::renamed(name) {
+            return e.with_help(format!("no Diracord, o servidor se chama `{to}`"));
+        }
         let mut names = self.env.names();
         for n in self.opts.registry.names() {
             names.push(n);

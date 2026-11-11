@@ -584,3 +584,27 @@ fn checker_checks_layout_arguments() {
     );
     assert!(check_codes("command(\"a\") { reply layout { row { for i in range(3) { button(toText(i), \"B\") } } } }").is_empty());
 }
+
+#[test]
+fn guild_is_not_an_alias_but_gets_a_safe_fix() {
+    let src =
+        "command(\"a\") {\n  reply \"Servidor: $guild.name\"\n  set(\"x\", 1, scope: guild)\n}";
+    let out = parse(src, &ParseOptions::default());
+    let diags: Vec<_> = check(&out.program, diracord_functions::registry())
+        .into_iter()
+        .map(|(_, d)| d)
+        .collect();
+    assert_eq!(diags.len(), 2, "{diags:#?}");
+    assert!(diags
+        .iter()
+        .all(|d| d.code == codes::E0200 && d.help.iter().any(|h| h.contains("`server`"))));
+    let fixes: Vec<_> = diags.iter().flat_map(|d| d.fixes.clone()).collect();
+    let fixed = diracord_diagnostics::apply_fixes(src, &fixes).unwrap();
+    assert_eq!(
+        fixed,
+        "command(\"a\") {\n  reply \"Servidor: $server.name\"\n  set(\"x\", 1, scope: server)\n}"
+    );
+    assert!(check_codes(&fixed).is_empty());
+    // A variable the author created called `guild` is fine.
+    assert!(check_codes("command(\"a\") { local guild = server\n reply guild.name }").is_empty());
+}

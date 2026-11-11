@@ -103,6 +103,20 @@ pub const AUTO_VARS: &[&str] = &[
     "interaction",
 ];
 
+/// Names people bring from other tools, and the Diracord name to use instead.
+///
+/// `guild` (discord.js) is **not** an alias of `server`: the owner decided on
+/// only one name (SPEC §4.9), so it gets a clear error and a safe fix.
+pub const RENAMES: &[(&str, &str)] = &[("guild", "server")];
+
+/// The Diracord name for `name`, if it is a known name from another tool.
+pub fn renamed(name: &str) -> Option<&'static str> {
+    RENAMES
+        .iter()
+        .find(|(from, _)| *from == name)
+        .map(|(_, to)| *to)
+}
+
 /// `true` if `name` is a reserved word.
 pub fn is_keyword(name: &str) -> bool {
     KEYWORDS.contains(&name)
