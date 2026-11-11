@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/lexersonly/diracord"
+
+[workspace.dependencies]
+diracord-diagnostics = { path = "crates/diracord-diagnostics" }
+diracord-ast = { path = "crates/diracord-ast" }
+diracord-value = { path = "crates/diracord-value" }
+diracord-lexer = { path = "crates/diracord-lexer" }
+diracord-parser = { path = "crates/diracord-parser" }
+diracord-interpreter = { path = "crates/diracord-interpreter" }
+diracord-functions = { path = "crates/diracord-functions" }
+diracord-dirabank = { path = "crates/diracord-dirabank" }
+
+# Small binaries matter: the target is a host with ~100 MB of RAM.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,0 +1,10 @@
+[package]
+name = "diracord-diagnostics"
+description = "Spans, diagnostics and error rendering for Diracord"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+

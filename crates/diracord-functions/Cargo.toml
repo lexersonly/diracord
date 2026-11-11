@@ -1,0 +1,10 @@
+[package]
+name = "diracord-functions"
+description = "Built-in function registry (one folder per category, one file per function)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+diracord-value.workspace = true

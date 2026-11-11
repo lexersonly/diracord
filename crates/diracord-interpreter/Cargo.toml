@@ -1,0 +1,12 @@
+[package]
+name = "diracord-interpreter"
+description = "Tree-walking interpreter with execution limits for Diracord"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+diracord-diagnostics.workspace = true
+diracord-ast.workspace = true
+diracord-value.workspace = true

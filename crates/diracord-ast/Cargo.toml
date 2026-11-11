@@ -1,0 +1,10 @@
+[package]
+name = "diracord-ast"
+description = "Syntax tree for the Diracord language"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+diracord-diagnostics.workspace = true

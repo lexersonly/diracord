@@ -1,0 +1,12 @@
+[package]
+name = "diracord-parser"
+description = "Parser for the Diracord language"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+diracord-diagnostics.workspace = true
+diracord-ast.workspace = true
+diracord-lexer.workspace = true
