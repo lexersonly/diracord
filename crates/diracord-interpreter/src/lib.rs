@@ -44,6 +44,7 @@ mod executor;
 mod host;
 mod limits;
 pub mod testing;
+mod user_fn;
 
 pub use check::check;
 pub use context::{Context, Trigger};

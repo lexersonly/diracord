@@ -2,8 +2,8 @@
 
 use crate::parser::{PResult, Parser};
 use diracord_ast::{
-    known, ArgType, CommandDef, EventDef, InteractionDef, InteractionKind, Item, ItemKind, Param,
-    Program,
+    known, ArgType, CommandDef, EventDef, FnParam, FunctionDef, InteractionDef, InteractionKind,
+    Item, ItemKind, Param, Program,
 };
 use diracord_diagnostics::{codes, did_you_mean, Diagnostic, FileId, Fix, Span, Spanned};
 use diracord_lexer::{StrPart, TokenKind};
@@ -50,7 +50,27 @@ impl Parser<'_> {
             _ => return self.loose_code(),
         };
         let next = self.nth(1).kind.clone();
-        let kind = if name == "command" && next == TokenKind::LParen {
+        if name == "function" && matches!(next, TokenKind::Ident(_)) {
+            let span = self.span();
+            self.report(
+                Diagnostic::error(
+                    codes::E0100,
+                    "No Diracord, funções são criadas com `fn`, não `function`",
+                )
+                .with_label(span, "use `fn`")
+                .with_help("exemplo: fn greet(name) { return \"Hi $name\" }")
+                .with_fix(Fix::replace(
+                    "trocar `function` por `fn`",
+                    span,
+                    "fn",
+                    true,
+                )),
+            );
+        }
+        let is_fn = (name == "fn" || name == "function") && matches!(next, TokenKind::Ident(_));
+        let kind = if is_fn {
+            ItemKind::Function(self.function()?)
+        } else if name == "command" && next == TokenKind::LParen {
             ItemKind::Command(self.command()?)
         } else if let (Some(k), TokenKind::LParen) = (InteractionKind::from_name(&name), &next) {
             ItemKind::Interaction(self.interaction(k)?)
@@ -74,11 +94,7 @@ impl Parser<'_> {
             .with_label(span, "código fora de command / evento")
             .with_help("coloque dentro de um comando: command(\"nome\") { ... }, ou de um evento: memberJoin { ... }");
         if let TokenKind::Ident(s) = self.kind() {
-            if s == "fn" || s == "function" {
-                d = d.with_note(
-                    "funções próprias (`fn`) ainda não existem: a sintaxe está em aberto na SPEC",
-                );
-            } else if let Some(sugg) = did_you_mean(s, ["command", "button", "menu", "modal"]) {
+            if let Some(sugg) = did_you_mean(s, ["command", "button", "menu", "modal"]) {
                 d = d.with_help(format!("você quis dizer `{sugg}`?"));
             }
         }
@@ -176,6 +192,23 @@ impl Parser<'_> {
                 )),
             );
         }
+        let ty = self.arg_type()?;
+        let default = if self.eat(&TokenKind::Assign) {
+            Some(self.expr(true)?)
+        } else {
+            None
+        };
+        let span = name.span.to(Span::point(self.prev_end()));
+        Ok(Param {
+            name,
+            ty,
+            default,
+            span,
+        })
+    }
+
+    /// A type name after `:` (`text`, `number`...), with suggestions for unknown ones.
+    fn arg_type(&mut self) -> PResult<Spanned<ArgType>> {
         let ty_tok = self.peek().clone();
         let TokenKind::Ident(ty_name) = &ty_tok.kind else {
             return self.unexpected(
@@ -215,18 +248,87 @@ impl Parser<'_> {
                 guess.unwrap_or(ArgType::Text)
             }
         };
-        let default = if self.eat(&TokenKind::Assign) {
-            Some(self.expr(true)?)
-        } else {
-            None
-        };
-        let span = name.span.to(Span::point(self.prev_end()));
-        Ok(Param {
-            name,
-            ty: Spanned::new(ty, ty_tok.span),
-            default,
-            span,
-        })
+        Ok(Spanned::new(ty, ty_tok.span))
+    }
+
+    /// `fn name(a, b: number = 1) { ... }` (the `fn` word is current).
+    fn function(&mut self) -> PResult<FunctionDef> {
+        self.bump(); // fn
+        let name = self.ident("o nome da função")?;
+        if !self.at(&TokenKind::LParen) {
+            let span = self.span();
+            return self.fail(
+                Diagnostic::error(
+                    codes::E0100,
+                    format!("Faltou `(` depois de `fn {}`", name.name),
+                )
+                .with_label(span, "esperava `(`")
+                .with_help(format!(
+                    "exemplo: fn {}(a, b) {{ return a + b }}",
+                    name.name
+                )),
+            );
+        }
+        let open = self.bump().span;
+        let mut params: Vec<FnParam> = Vec::new();
+        while !self.at(&TokenKind::RParen) {
+            if matches!(
+                self.kind(),
+                TokenKind::Eof | TokenKind::LBrace | TokenKind::RBrace
+            ) {
+                break;
+            }
+            let pname = self.ident("o nome do argumento")?;
+            let ty = if self.eat(&TokenKind::Colon) {
+                Some(self.arg_type()?)
+            } else {
+                None
+            };
+            let default = if self.eat(&TokenKind::Assign) {
+                Some(self.expr(true)?)
+            } else {
+                None
+            };
+            let span = pname.span.to(Span::point(self.prev_end()));
+            if let Some(prev) = params.iter().find(|q| q.name.name == pname.name) {
+                self.report(
+                    Diagnostic::error(
+                        codes::E0116,
+                        format!("O argumento `{}` aparece duas vezes", pname.name),
+                    )
+                    .with_label(pname.span, "nome repetido")
+                    .with_secondary(prev.name.span, "primeira vez aqui"),
+                );
+            }
+            if default.is_none() {
+                if let Some(opt) = params.iter().find(|q| q.default.is_some()) {
+                    self.report(
+                        Diagnostic::error(
+                            codes::E0112,
+                            format!(
+                                "O argumento obrigatório `{}` está depois de um opcional",
+                                pname.name
+                            ),
+                        )
+                        .with_label(span, "obrigatório")
+                        .with_secondary(opt.span, "opcional antes dele")
+                        .with_help("coloque os argumentos com `= valor` no fim"),
+                    );
+                }
+            }
+            params.push(FnParam {
+                name: pname,
+                ty,
+                default,
+                span,
+            });
+            if !self.eat(&TokenKind::Comma) {
+                break;
+            }
+        }
+        self.close_paren(open)?;
+        let body = self.block()?;
+        Ok(FunctionDef { name, params, body })
     }
 
     fn interaction(&mut self, kind: InteractionKind) -> PResult<InteractionDef> {

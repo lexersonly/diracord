@@ -5,10 +5,11 @@ use crate::env::Env;
 use crate::error::RuntimeError;
 use crate::host::Host;
 use crate::limits::{Limits, Meter};
-use diracord_ast::{ArgType, Block, CommandDef, ItemKind, Param, Program};
+use diracord_ast::{ArgType, Block, CommandDef, ItemKind, Program};
 use diracord_diagnostics::{codes, did_you_mean, FileId, Span};
 use diracord_functions::Registry;
 use diracord_value::{Scope, Store, Value};
+use std::collections::HashMap;
 
 /// Interpreter settings.
 #[derive(Clone, Debug)]
@@ -48,6 +49,8 @@ pub struct Outcome {
 pub struct Interpreter {
     program: Program,
     options: Options,
+    /// User functions by name → (file, index in `program.items`).
+    functions: HashMap<String, (FileId, usize)>,
 }
 
 pub(crate) type R<T> = Result<T, RuntimeError>;
@@ -70,12 +73,33 @@ pub(crate) struct Machine<'r> {
     pub(crate) ctx: &'r Context,
     pub(crate) env: Env,
     pub(crate) meter: Meter,
+    /// The whole program (user functions live in it).
+    pub(crate) program: &'r Program,
+    /// User functions by name.
+    pub(crate) functions: &'r HashMap<String, (FileId, usize)>,
+    /// How many user functions are running inside each other.
+    pub(crate) depth: u32,
+    /// Bytes held by callers' variables while a function runs.
+    pub(crate) outer_bytes: usize,
 }
 
 impl Interpreter {
     /// Wraps a (merged) program.
     pub fn new(program: Program, options: Options) -> Self {
-        Interpreter { program, options }
+        let functions = program
+            .items
+            .iter()
+            .enumerate()
+            .filter_map(|(i, item)| match &item.kind {
+                ItemKind::Function(f) => Some((f.name.name.clone(), (item.file, i))),
+                _ => None,
+            })
+            .collect();
+        Interpreter {
+            program,
+            options,
+            functions,
+        }
     }
 
     /// The program.
@@ -106,6 +130,10 @@ impl Interpreter {
             ctx: &ctx,
             env: Env::new(),
             meter: Meter::new(),
+            program: &self.program,
+            functions: &self.functions,
+            depth: 0,
+            outer_bytes: 0,
         };
         let mut value = Value::Null;
         for (file, cmd, body) in self.handlers(trigger)? {
@@ -123,8 +151,12 @@ impl Interpreter {
             match r {
                 Ok(crate::engine::Flow::Return(v)) => value = v,
                 Ok(_) => {}
+                // `stop` inside a function ends the run normally.
+                Err(e) if e.stop => break,
                 Err(mut e) => {
-                    e.file = file;
+                    if !e.located {
+                        e.file = file;
+                    }
                     return Err(e);
                 }
             }
@@ -186,7 +218,7 @@ impl Machine<'_> {
 
     /// Errors with `E0206` when variables hold too much memory.
     pub(crate) fn check_memory(&self, span: Span) -> R<()> {
-        self.check_size(self.env.bytes(), span)
+        self.check_size(self.env.bytes() + self.outer_bytes, span)
     }
 
     pub(crate) fn check_size(&self, bytes: usize, span: Span) -> R<()> {
@@ -207,7 +239,13 @@ impl Machine<'_> {
     async fn bind_params(&mut self, cmd: &CommandDef, args: &[(String, Value)]) -> R<()> {
         for p in &cmd.params {
             let value = match args.iter().find(|(n, _)| n == &p.name.name) {
-                Some((_, v)) if *v != Value::Null => coerce(p, v.clone(), &cmd.name.node)?,
+                Some((_, v)) if *v != Value::Null => coerce(
+                    &p.name.name,
+                    p.ty.node,
+                    p.span,
+                    v.clone(),
+                    &format!("do comando `{}`", cmd.name.node),
+                )?,
                 _ => match &p.default {
                     Some(d) => self.eval(d).await?,
                     None => {
@@ -247,20 +285,21 @@ fn usage(cmd: &CommandDef) -> String {
 }
 
 /// Converts a host-provided argument to the declared type.
-fn coerce(p: &Param, v: Value, command: &str) -> R<Value> {
+/// Converts a value to a declared type (command arguments and typed `fn` parameters).
+/// `owner` is e.g. "do comando `ban`"; `span` is where the arrow points.
+pub(crate) fn coerce(name: &str, ty: ArgType, span: Span, v: Value, owner: &str) -> R<Value> {
     let bad = |what: &str, v: &Value| {
         RuntimeError::new(
             codes::E0302,
             format!(
-                "O argumento `{}` do comando `{command}` precisa ser {what}, mas recebeu {}",
-                p.name.name,
+                "O argumento `{name}` {owner} precisa ser {what}, mas recebeu {}",
                 v.type_name()
             ),
-            p.span,
-            format!("declarado como {}", p.ty.node),
+            span,
+            format!("declarado como {ty}"),
         )
     };
-    Ok(match p.ty.node {
+    Ok(match ty {
         ArgType::Text => match v {
             Value::Text(_) => v,
             Value::Int(_) | Value::Float(_) | Value::Bool(_) => Value::Text(v.to_string()),
@@ -293,7 +332,7 @@ fn coerce(p: &Param, v: Value, command: &str) -> R<Value> {
             if v.entity_id().is_some() {
                 v
             } else {
-                return Err(bad(&format!("um {}", p.ty.node), &v));
+                return Err(bad(&format!("um {ty}"), &v));
             }
         }
     })

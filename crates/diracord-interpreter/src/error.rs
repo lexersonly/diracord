@@ -13,6 +13,10 @@ pub struct RuntimeError {
     pub file: FileId,
     /// `false` for limit errors, which `testing`/`catch` cannot catch.
     pub catchable: bool,
+    /// The `file` was already set where the error happened (inside a `fn` of another file).
+    pub(crate) located: bool,
+    /// Not an error: `stop` inside a `fn`, travelling up to end the whole run.
+    pub(crate) stop: bool,
 }
 
 impl RuntimeError {
@@ -27,6 +31,8 @@ impl RuntimeError {
             diagnostic: Box::new(Diagnostic::error(code, message).with_label(span, label)),
             file: FileId::default(),
             catchable: true,
+            located: false,
+            stop: false,
         }
     }
 
@@ -40,7 +46,21 @@ impl RuntimeError {
             ),
             file: FileId::default(),
             catchable: false,
+            located: false,
+            stop: false,
         }
+    }
+
+    /// `stop` used inside a `fn`: ends the run without being an error.
+    pub(crate) fn stop_signal() -> Self {
+        let mut e = Self::limit(
+            diracord_diagnostics::codes::E0210,
+            "stop",
+            Span::default(),
+            "",
+        );
+        e.stop = true;
+        e
     }
 
     /// Adds a help line.

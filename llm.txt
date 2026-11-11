@@ -43,8 +43,10 @@ intents = ["guilds", "guildMessages", "messageContent", "guildMembers"]
 
 - Comentário: `//` até o fim da linha. Não existe comentário de bloco.
 - Nomes: letra ou `_`, depois letras, dígitos ou `_`. Diferencia maiúsculas: `memberJoin` ≠ `memberjoin`.
-- Palavras reservadas: command button menu modal local if else for in while chain testing catch
+- Palavras reservadas: command fn local if else for in while chain testing try catch
   return stop break continue true false null and or not
+  (`button`, `menu` e `modal` só são especiais no topo do arquivo, como `button("id") { }`;
+  dentro do código, `button(...)` é a peça de Components v2.)
 - Números: `15`, `1.5`, `1_000`. Ids do Discord são TEXTO: `"123456789012345678"`.
 - Texto: só aspas duplas `"..."`, numa linha. Escapes: `\n \t \" \\ \$`.
 - Interpolação: `$nome` ou `$nome.campo.campo` dentro do texto. Para o símbolo $, use `\$`.
@@ -55,9 +57,11 @@ intents = ["guilds", "guildMessages", "messageContent", "guildMembers"]
 
 ```ebnf
 program     = { item } ;
-item        = command | event | interaction ;
+item        = command | event | interaction | function ;
 command     = "command" "(" STRING { "," param } [ "," ] ")" block ;
 param       = NAME ":" argtype [ "=" expr ] ;          (* com "= valor" fica opcional; opcionais no fim *)
+function    = "fn" NAME "(" [ fnparam { "," fnparam } ] ")" block ;
+fnparam     = NAME [ ":" argtype ] [ "=" expr ] ;      (* tipo opcional; opcionais no fim *)
 argtype     = "text" | "number" | "bool" | "member" | "user" | "channel" | "role" ;
 event       = EVENT_NAME block ;                       (* nome direto, sem palavra-chave *)
 interaction = ( "button" | "menu" | "modal" ) "(" STRING ")" block ;
@@ -156,6 +160,34 @@ Onde cada peça pode ficar:
 Layout não se mistura com texto ou embed: para texto, use text(...). Máximo 40 peças por mensagem.
 A forma objeto (para gerar por código) é equivalente:
 `reply { layout: [ { container: [ { text: "## Hi" }, { row: [ { button: "ok", label: "Ok" } ] } ], color: "purple" } ] }`
+
+## 4.2 Funções próprias (fn)
+
+```dcs
+fn giveCoins(who: member, amount: number = 1) {
+  local total = get("coins", 0, scope: user) + amount
+  set("coins", total, scope: user)
+  return total
+}
+
+fn greet(name) {
+  return "Hi $name"
+}
+
+command("daily") {
+  local total = giveCoins(user, 100)
+  reply greet(user.name) + "! You have $total coins."
+}
+```
+- Ficam no topo de qualquer arquivo e valem no projeto todo. Chamada igual às embutidas:
+  `giveCoins(user, 10)`, `giveCoins user 10`, `giveCoins(who: user, amount: 10)`.
+- Tipos são opcionais e iguais aos de `command` (text, number, bool, member, user, channel,
+  role). Com tipo, `"10"` vira `10`; tipo errado é E0302 apontando a chamada.
+- A função só enxerga os próprios argumentos, os próprios `local` e as variáveis automáticas
+  (`user`, `server`, `channel`, `message`). NÃO enxerga os `local` de quem chamou.
+- `return valor` devolve o resultado (sem `return`, devolve `null`). `stop` dentro da função
+  encerra o comando inteiro. Recursão é permitida, até 64 chamadas aninhadas (E0211).
+- Não pode ter o nome de uma função embutida (`fn reply(...)` é E0116). Use `fn`, não `function`.
 
 ## 5. Variáveis automáticas
 
@@ -326,6 +358,9 @@ E0504 motor não encontrado
 
 - `let x = 1` / `var x = 1` → `local x = 1` (E0100, corrigido por --fix)
 - `try { } catch err { }` → `testing { } catch err { }` (E0100, corrigido por --fix)
+- `function hi(x) { }` → `fn hi(x) { }` (E0100, corrigido por --fix)
+- `fn reply(x) { }` → escolha outro nome; `reply` é embutida (E0116)
+- usar dentro da `fn` uma variável `local` de quem chamou → passe como argumento (E0200)
 - `if x = 1 { }` → `if x == 1 { }` (E0100, corrigido por --fix)
 - `x = 1` sem criar antes → `local x = 1` (E0200, corrigido por --fix)
 - `rpely "oi"` → `reply "oi"` (E0201, com sugestão)
@@ -397,7 +432,7 @@ button("confirm") {
 }
 ```
 
-## 13. Ainda NÃO existe (decisões em aberto na SPEC — não use)
+## 13. Ainda NÃO existe (não use)
 
-- Funções próprias (`fn nome(...) { }`): sintaxe em aberto.
 - Plugins WASM.
+- Funções como valor (`local f = giveCoins`): funções só podem ser chamadas.

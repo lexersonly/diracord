@@ -7,14 +7,12 @@
 //!
 //! ```text
 //! Program
-//! └── Item           command("ping") { ... } | memberJoin { ... } | button("id") { ... }
+//! └── Item           command("ping") { ... } | memberJoin { ... } | button("id") { ... } | fn name(...) { ... }
 //!     └── Block      { stmt; stmt; ... }
 //!         └── Stmt   local / assign / if / for / while / chain / testing / return / ...
 //!             └── Expr  literal / name / "text $var" / call / binary / ...
 //! ```
 //!
-//! Undecided parts of the language (marked `[ABERTO]` in `docs/SPEC.md`), such
-//! as user-defined `fn`, are intentionally **not** in the tree yet.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -31,6 +29,7 @@ pub use expr::{
 };
 pub use ident::Ident;
 pub use item::{
-    ArgType, CommandDef, EventDef, InteractionDef, InteractionKind, Item, ItemKind, Param, Program,
+    ArgType, CommandDef, EventDef, FnParam, FunctionDef, InteractionDef, InteractionKind, Item,
+    ItemKind, Param, Program,
 };
 pub use stmt::{Block, ChainArm, IfBranch, Pattern, PatternKind, Stmt, StmtKind};

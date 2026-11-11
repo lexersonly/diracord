@@ -122,6 +122,8 @@ pub(crate) fn manifest(p: &Program) -> Vec<(String, Value)> {
                 ("kind", i.kind.as_str().into()),
                 ("id", i.id.node.as_str().into()),
             ])),
+            // User functions run inside the engine; the host does not need them.
+            ItemKind::Function(_) => {}
         }
     }
     vec![

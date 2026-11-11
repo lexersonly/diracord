@@ -28,7 +28,7 @@ multiusuário. A hospedagem é só uma meta de projeto (ver ARCHITECTURE.md).
 2. Blocos com **chaves `{ }`**, como JS/TS. Sem indentação significativa.
 3. Parênteses são **opcionais** em chamadas simples: `reply "oi"` e `reply("oi")` são iguais.
 4. Texto interpola variáveis com `$`: `"Oi $user.name"`.
-5. Tipos só existem nos **argumentos de comando**. O resto é dinâmico.
+5. Tipos só existem nos **argumentos de comando** e (opcionais) nos **argumentos de `fn`**. O resto é dinâmico.
 6. Extensões de arquivo aceitas: `.dcs`, `.dira`, `.diracord`.
 7. Comentários com `//`.
 
@@ -108,10 +108,12 @@ testing { ban user } catch err { reply "Falhou: $err" }
   ```
 
 ### 4.7 Funções próprias
+Decidido em 2026-11-11 (`docs/rfcs/functions.md`, proposta B): `fn`, com **tipos opcionais**
+iguais aos dos argumentos de comando.
 ```
-fn greet(name: text) { return "Oi $name" }
+fn greet(name: text) { return "Hi $name" }
+fn add(a, b = 1) { return a + b }
 ```
-**[ABERTO]** sintaxe exata e se aceita tipos. Três propostas em `docs/rfcs/functions.md`.
 
 ### 4.8 Atalho estilo aoi.js
 `$ban[user;reason]` equivale a `ban(user, reason)`. Fica **desligado/ligado por
@@ -169,4 +171,4 @@ disco). Versão `1` no cabeçalho; arquivos `v0` são atualizados ao abrir.
 Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 
 ## 10. Decisões em aberto (resumo)
-- Sintaxe das funções próprias (`docs/rfcs/functions.md`).
+Nenhuma no momento. Decisões tomadas ficam registradas em `docs/rfcs/`.

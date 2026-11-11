@@ -2,7 +2,7 @@
 //! argument counts, `break` outside loops, repeated names.
 
 use diracord_ast::{
-    known, Arg, Block, Expr, ExprKind, ItemKind, Program, Stmt, StmtKind, TemplatePart,
+    known, Arg, Block, Expr, ExprKind, FunctionDef, ItemKind, Program, Stmt, StmtKind, TemplatePart,
 };
 use diracord_diagnostics::{codes, did_you_mean, Diagnostic, FileId, Fix, Span};
 use diracord_functions::{ParamKind, Registry};
@@ -14,9 +14,37 @@ pub fn check(program: &Program, registry: &Registry) -> Vec<(FileId, Diagnostic)
     let mut out = Vec::new();
     let mut commands: HashMap<&str, (FileId, Span)> = HashMap::new();
     let mut interactions: HashMap<(&str, &str), (FileId, Span)> = HashMap::new();
+    let mut fns: HashMap<&str, &FunctionDef> = HashMap::new();
+    for item in &program.items {
+        let ItemKind::Function(f) = &item.kind else {
+            continue;
+        };
+        let name = f.name.name.as_str();
+        if registry.get(name).is_some() {
+            out.push((
+                item.file,
+                Diagnostic::error(
+                    codes::E0116,
+                    format!("`{name}` já é uma função embutida do Diracord"),
+                )
+                .with_label(f.name.span, "nome já usado")
+                .with_help("escolha outro nome para a sua função"),
+            ));
+        } else if fns.insert(name, f).is_some() {
+            out.push((
+                item.file,
+                Diagnostic::error(
+                    codes::E0116,
+                    format!("Já existe outra função chamada `{name}`"),
+                )
+                .with_label(f.name.span, "nome repetido"),
+            ));
+        }
+    }
     for item in &program.items {
         let mut c = Checker {
             registry,
+            fns: &fns,
             scopes: Vec::new(),
             loops: 0,
             diags: Vec::new(),
@@ -91,6 +119,18 @@ pub fn check(program: &Program, registry: &Registry) -> Vec<(FileId, Diagnostic)
                 }
                 &i.body
             }
+            ItemKind::Function(f) => {
+                c.scopes.push(vars.clone());
+                for p in &f.params {
+                    if let Some(d) = &p.default {
+                        c.expr(d);
+                    }
+                    c.declare(&p.name.name);
+                    vars.push(p.name.name.clone());
+                }
+                c.scopes.clear();
+                &f.body
+            }
         };
         c.scopes = vec![vars];
         c.block(body);
@@ -101,6 +141,7 @@ pub fn check(program: &Program, registry: &Registry) -> Vec<(FileId, Diagnostic)
 
 struct Checker<'a> {
     registry: &'a Registry,
+    fns: &'a HashMap<&'a str, &'a FunctionDef>,
     scopes: Vec<Vec<String>>,
     loops: u32,
     diags: Vec<Diagnostic>,
@@ -223,7 +264,9 @@ impl Checker<'_> {
         match &e.kind {
             ExprKind::Literal(_) => {}
             ExprKind::Name(id)
-                if !self.declared(&id.name) && self.registry.get(&id.name).is_some() =>
+                if !self.declared(&id.name)
+                    && (self.registry.get(&id.name).is_some()
+                        || self.fns.contains_key(id.name.as_str())) =>
             {
                 // A function name alone is a call with no arguments.
                 self.call(e, &[], e.span);
@@ -288,17 +331,97 @@ impl Checker<'_> {
         }
     }
 
+    /// Argument checks for a call to a user function.
+    fn user_call(&mut self, def: &FunctionDef, args: &[Arg], span: Span) {
+        let usage = format!("uso: {}", def.signature());
+        let mut given = vec![false; def.params.len()];
+        let mut next = 0;
+        for a in args {
+            self.expr(&a.value);
+            match &a.name {
+                None if next >= def.params.len() => {
+                    self.diags.push(
+                        Diagnostic::error(
+                            codes::E0301,
+                            format!(
+                                "`{}` aceita no máximo {} argumento(s)",
+                                def.name.name,
+                                def.params.len()
+                            ),
+                        )
+                        .with_label(a.span, "argumento a mais")
+                        .with_help(usage.clone()),
+                    );
+                    return;
+                }
+                None => {
+                    given[next] = true;
+                    next += 1;
+                }
+                Some(n) => match def.params.iter().position(|p| p.name.name == n.name) {
+                    Some(i) => given[i] = true,
+                    None => {
+                        let mut d = Diagnostic::error(
+                            codes::E0303,
+                            format!("`{}` não tem o argumento `{}`", def.name.name, n.name),
+                        )
+                        .with_label(n.span, "argumento desconhecido");
+                        d = match did_you_mean(
+                            &n.name,
+                            def.params.iter().map(|p| p.name.name.as_str()),
+                        ) {
+                            Some(s) => d.with_help(format!("você quis dizer `{s}:`?")),
+                            None => d.with_help(usage.clone()),
+                        };
+                        self.diags.push(d);
+                    }
+                },
+            }
+        }
+        let missing: Vec<&str> = def
+            .params
+            .iter()
+            .zip(&given)
+            .filter(|(p, g)| p.default.is_none() && !**g)
+            .map(|(p, _)| p.name.name.as_str())
+            .collect();
+        if !missing.is_empty() {
+            self.diags.push(
+                Diagnostic::error(
+                    codes::E0300,
+                    format!(
+                        "Faltou o argumento `{}` em `{}`",
+                        missing.join("`, `"),
+                        def.name.name
+                    ),
+                )
+                .with_label(span, "faltam argumentos")
+                .with_help(usage),
+            );
+        }
+    }
+
     fn call(&mut self, callee: &Expr, args: &[Arg], span: Span) {
         let Some(id) = callee.as_ident() else {
             self.expr(callee);
             args.iter().for_each(|a| self.expr(&a.value));
             return;
         };
+        if self.registry.get(&id.name).is_none() {
+            if let Some(def) = self.fns.get(id.name.as_str()).copied() {
+                self.user_call(def, args, span);
+                return;
+            }
+        }
         let Some(spec) = self.registry.get(&id.name) else {
             let mut d =
                 Diagnostic::error(codes::E0201, format!("A função `{}` não existe", id.name))
                     .with_label(id.span, "função desconhecida");
-            if let Some(s) = did_you_mean(&id.name, self.registry.names()) {
+            let mut names: Vec<&str> = self.fns.keys().copied().collect();
+            for n in self.registry.names() {
+                names.push(n);
+            }
+            if let Some(s) = did_you_mean(&id.name, names.iter().copied()) {
                 d = d
                     .with_help(format!("você quis dizer `{s}`?"))
                     .with_fix(Fix::replace(

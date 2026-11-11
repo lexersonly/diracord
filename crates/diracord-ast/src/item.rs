@@ -38,6 +38,14 @@ impl Program {
         })
     }
 
+    /// All user-defined functions (`fn name(...) { }`).
+    pub fn functions(&self) -> impl Iterator<Item = &FunctionDef> {
+        self.items.iter().filter_map(|i| match &i.kind {
+            ItemKind::Function(f) => Some(f),
+            _ => None,
+        })
+    }
+
     /// Finds a command by name.
     pub fn command(&self, name: &str) -> Option<&CommandDef> {
         self.commands().find(|c| c.name.node == name)
@@ -83,6 +91,50 @@ pub enum ItemKind {
     Event(EventDef),
     /// `button("confirm") { ... }`, `menu(...)`, `modal(...)`
     Interaction(InteractionDef),
+    /// `fn greet(name: text) { return "Oi $name" }`
+    Function(FunctionDef),
+}
+
+/// A user-defined function. Global to the project, called like a built-in.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FunctionDef {
+    /// Function name.
+    pub name: Ident,
+    /// Parameters, in order. Types are optional.
+    pub params: Vec<FnParam>,
+    /// The body. `return value` gives the result; without it the result is `null`.
+    pub body: Block,
+}
+
+/// A function parameter: `amount`, `amount: number` or `amount: number = 1`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FnParam {
+    /// Parameter name.
+    pub name: Ident,
+    /// Declared type, if any. With a type, the value is converted/checked like a command argument.
+    pub ty: Option<Spanned<ArgType>>,
+    /// Default value; `Some` makes the parameter optional.
+    pub default: Option<Expr>,
+    /// The whole parameter.
+    pub span: Span,
+}
+
+impl FunctionDef {
+    /// `giveCoins(who: member, amount?: number)` for help messages.
+    pub fn signature(&self) -> String {
+        let ps: Vec<String> = self
+            .params
+            .iter()
+            .map(|p| {
+                let opt = if p.default.is_some() { "?" } else { "" };
+                match &p.ty {
+                    Some(t) => format!("{}{opt}: {}", p.name.name, t.node),
+                    None => format!("{}{opt}", p.name.name),
+                }
+            })
+            .collect();
+        format!("{}({})", self.name.name, ps.join(", "))
+    }
 }
 
 /// A command. The same definition serves prefix and slash commands.

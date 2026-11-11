@@ -600,3 +600,106 @@ fn wrong_piece_gets_an_arrow_on_itself() {
         [codes::E0300]
     );
 }
+
+// ---- user functions (fn) ----
+
+#[test]
+fn user_functions_end_to_end() {
+    let src = r#"fn giveCoins(who: member, amount: number = 1) {
+  local total = get("coins", 0, scope: user) + amount
+  set("coins", total, scope: user)
+  return total
+}
+
+fn greet(name) { return "Hi $name" }
+
+command("daily") {
+  local t = giveCoins(user, "100")
+  reply greet(user.name) + ", total: $t"
+  reply "now " + giveCoins(user)
+  reply giveCoins(amount: 5, who: user)
+}"#;
+    assert_eq!(
+        replies(src, Trigger::command("daily")),
+        ["Hi Ana, total: 100", "now 101", "106"]
+    );
+}
+
+#[test]
+fn functions_do_not_see_caller_locals() {
+    let src =
+        "fn peek() { return secret }\ncommand(\"t\") {\n  local secret = 1\n  reply peek()\n}";
+    let out = parse(src, &ParseOptions::default());
+    let codes: Vec<_> = check(&out.program, diracord_functions::registry())
+        .into_iter()
+        .map(|(_, d)| d.code)
+        .collect();
+    assert_eq!(codes, [codes::E0200]);
+    let mut host = TestHost::new();
+    let e = run(
+        &Interpreter::new(out.program, Options::default()),
+        Trigger::command("t"),
+        &mut host,
+        &mut MemoryStore::new(),
+    )
+    .unwrap_err();
+    assert_eq!(e.diagnostic.code, codes::E0200);
+}
+
+#[test]
+fn stop_inside_a_function_ends_the_command() {
+    let src = "fn guard() {\n  reply \"no\"\n  stop\n}\ncommand(\"t\") {\n  guard()\n  reply \"never\"\n}";
+    assert_eq!(replies(src, Trigger::command("t")), ["no"]);
+}
+
+#[test]
+fn recursion_is_limited() {
+    let src = "fn fact(n: number) {\n  if n <= 1 { return 1 }\n  return n * fact(n - 1)\n}\nfn forever() { return forever() }\ncommand(\"f\") { reply fact(10) }\ncommand(\"x\") { reply forever() }";
+    assert_eq!(replies(src, Trigger::command("f")), ["3628800"]);
+    assert_eq!(err_code(src, Trigger::command("x")), codes::E0211);
+}
+
+#[test]
+fn function_argument_errors() {
+    let src =
+        "fn add(a: number, b: number = 1) { return a + b }\ncommand(\"t\") { reply add(\"x\") }";
+    assert_eq!(err_code(src, Trigger::command("t")), codes::E0302);
+    let src = "fn add(a, b) { return a + b }\ncommand(\"t\") { reply add(1) }";
+    assert_eq!(err_code(src, Trigger::command("t")), codes::E0300);
+    assert_eq!(
+        check_codes("fn add(a, b) { return a + b }\ncommand(\"t\") { reply add(1, 2, 3) }"),
+        [codes::E0301]
+    );
+    assert_eq!(
+        check_codes("fn add(a, b) { return a + b }\ncommand(\"t\") { reply add(1, c: 2) }"),
+        [codes::E0303, codes::E0300]
+    );
+    assert_eq!(check_codes("fn reply(x) { }"), [codes::E0116]);
+    assert_eq!(check_codes("fn a() { }\nfn a() { }"), [codes::E0116]);
+    assert_eq!(
+        check_codes("fn a() { }\ncommand(\"t\") { ad() }"),
+        [codes::E0201]
+    );
+}
+
+#[test]
+fn errors_inside_functions_point_at_the_functions_file() {
+    let a = parse(
+        "command(\"t\") {\n  reply boom()\n}",
+        &ParseOptions::default(),
+    )
+    .program;
+    let b = parse("fn boom() {\n  return 1 / 0\n}", &ParseOptions::default()).program;
+    let p =
+        diracord_ast::Program::merge([(diracord_ast::FileId(0), a), (diracord_ast::FileId(1), b)]);
+    let mut host = TestHost::new();
+    let e = run(
+        &Interpreter::new(p, Options::default()),
+        Trigger::command("t"),
+        &mut host,
+        &mut MemoryStore::new(),
+    )
+    .unwrap_err();
+    assert_eq!(e.diagnostic.code, codes::E0203);
+    assert_eq!(e.file, diracord_ast::FileId(1));
+}

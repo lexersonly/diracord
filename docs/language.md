@@ -134,6 +134,35 @@ command("t", n: number) {
 
 Operadores: `+ - * / %`, `== != < <= > >=`, `and`/`&&`, `or`/`||`, `not`/`!`.
 
+## Funções próprias
+
+Para não repetir código, crie funções com `fn`, no topo de qualquer arquivo:
+
+```dcs
+fn giveCoins(who: member, amount: number = 1) {
+  local total = get("coins", 0, scope: user) + amount
+  set("coins", total, scope: user)
+  return total
+}
+
+fn greet(name) {
+  return "Hi $name"
+}
+
+command("daily") {
+  local total = giveCoins(user, 100)
+  reply greet(user.name) + "! You have $total coins."
+}
+```
+
+- Os tipos são **opcionais** e iguais aos de `command`. Com tipo, `"10"` vira `10`, e o erro
+  de tipo aponta para a chamada.
+- Chame como qualquer função: `giveCoins(user, 10)`, `giveCoins user 10` ou por nome,
+  `giveCoins(who: user, amount: 10)`.
+- A função só enxerga os próprios argumentos e as variáveis automáticas (`user`, `server`...),
+  não os `local` de quem chamou: passe o que ela precisa como argumento.
+- `return` devolve o resultado; `stop` dentro dela encerra o comando inteiro.
+
 ## Erros tratáveis
 
 ```dcs
@@ -255,6 +284,6 @@ Desligado (padrão), o `check` mostra o erro E0108 e o `--fix` reescreve para a 
 Cada execução tem limite de passos, tempo, memória e ações no Discord (veja
 `[limits]` no `diracord.toml`). Um `while true { }` é parado com o erro E0205.
 
-## Ainda em aberto
+## Ainda não existe
 
-Funções próprias (`fn`). Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).
+Plugins WASM e funções como valor (`local f = giveCoins`). Ver [SPEC.md](SPEC.md) e [rfcs/](rfcs/).

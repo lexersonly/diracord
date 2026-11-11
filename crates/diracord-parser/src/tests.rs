@@ -442,3 +442,30 @@ fn try_is_an_error_with_a_safe_fix() {
     };
     assert!(matches!(c.body.stmts[0].kind, StmtKind::Testing { .. }));
 }
+
+#[test]
+fn user_functions() {
+    let src = "fn giveCoins(who: member, amount: number = 1) {\n  return amount\n}\nfn hi(name) { return \"Hi $name\" }";
+    let out = parse(src, &ParseOptions::default());
+    assert!(out.diagnostics.is_empty(), "{:#?}", out.diagnostics);
+    let fns: Vec<_> = out.program.functions().collect();
+    assert_eq!(fns.len(), 2);
+    assert_eq!(
+        fns[0].signature(),
+        "giveCoins(who: member, amount?: number)"
+    );
+    assert_eq!(fns[1].signature(), "hi(name)");
+    assert!(fns[1].params[0].ty.is_none());
+}
+
+#[test]
+fn function_keyword_mistakes() {
+    let src = "function hi(name) { return name }";
+    let out = parse(src, &ParseOptions::default());
+    assert_eq!(out.diagnostics.len(), 1);
+    let fixed = apply_fixes(src, &out.diagnostics[0].fixes).unwrap();
+    assert_eq!(fixed, "fn hi(name) { return name }");
+    assert_eq!(codes_of("fn hi(a = 1, b) { }"), [codes::E0112]);
+    assert_eq!(codes_of("fn hi(a: string) { }"), [codes::E0107]);
+    assert_eq!(codes_of("fn hi(a, a) { }"), [codes::E0116]);
+}

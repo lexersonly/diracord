@@ -52,6 +52,9 @@ impl<'r> Machine<'r> {
                     if let Some(spec) = self.opts.registry.get(&id.name) {
                         return self.call(spec, &[], e.span).await;
                     }
+                    if self.user_fn(&id.name).is_some() {
+                        return self.call_user(&id.name, &[], e.span).await;
+                    }
                     Err(self.undefined(&id.name, e.span))
                 }
                 ExprKind::Template(parts) => {
@@ -112,6 +115,7 @@ impl<'r> Machine<'r> {
                     };
                     if self.env.get(&id.name).is_some()
                         && self.opts.registry.get(&id.name).is_none()
+                        && self.user_fn(&id.name).is_none()
                     {
                         return Err(RuntimeError::new(
                             codes::E0207,
@@ -123,6 +127,9 @@ impl<'r> Machine<'r> {
                     }
                     match self.opts.registry.get(&id.name) {
                         Some(spec) => self.call(spec, args, e.span).await,
+                        None if self.user_fn(&id.name).is_some() => {
+                            self.call_user(&id.name, args, e.span).await
+                        }
                         None => Err(self.unknown_function(&id.name, id.span)),
                     }
                 }
@@ -176,6 +183,9 @@ impl<'r> Machine<'r> {
         for n in self.opts.registry.names() {
             names.push(n);
         }
+        for n in self.functions.keys() {
+            names.push(n);
+        }
         if let Some(s) = did_you_mean(name, names.iter().copied()) {
             e = e.with_help(format!("você quis dizer `{s}`?"));
         }
@@ -189,7 +199,11 @@ impl<'r> Machine<'r> {
             span,
             "função desconhecida",
         );
-        if let Some(s) = did_you_mean(name, self.opts.registry.names()) {
+        let mut names: Vec<&str> = self.functions.keys().map(String::as_str).collect();
+        for n in self.opts.registry.names() {
+            names.push(n);
+        }
+        if let Some(s) = did_you_mean(name, names.iter().copied()) {
             e = e.with_help(format!("você quis dizer `{s}`?"));
         }
         e
