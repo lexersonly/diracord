@@ -6,7 +6,34 @@
 
 use diracord_functions::{registry, Category};
 
+/// Categories in documentation order.
+const CATEGORIES: [Category; 9] = [
+    Category::Messages,
+    Category::Moderation,
+    Category::Roles,
+    Category::Lookup,
+    Category::Data,
+    Category::Text,
+    Category::Math,
+    Category::Lists,
+    Category::Utility,
+];
+
+/// One line per function, for `llm.txt` (`--llm`).
+fn llm() {
+    let r = registry();
+    for c in CATEGORIES {
+        println!("[{c}]");
+        for s in r.in_category(c) {
+            println!("{} -> {} : {}", s.signature(), s.returns, s.summary);
+        }
+    }
+}
+
 fn main() {
+    if std::env::args().any(|a| a == "--llm") {
+        return llm();
+    }
     let r = registry();
     println!("# Funções embutidas\n");
     println!(
@@ -18,18 +45,7 @@ fn main() {
     );
     println!("`reply \"oi\"` é igual a `reply(\"oi\")`. Argumentos com `?` são opcionais e");
     println!("também podem ser passados pelo nome: `get(\"coins\", scope: user)`.\n");
-    let cats = [
-        Category::Messages,
-        Category::Moderation,
-        Category::Roles,
-        Category::Lookup,
-        Category::Data,
-        Category::Text,
-        Category::Math,
-        Category::Lists,
-        Category::Utility,
-    ];
-    for c in cats {
+    for c in CATEGORIES {
         println!("## {c}\n");
         for s in r.in_category(c) {
             println!("### `{}`\n", s.signature());

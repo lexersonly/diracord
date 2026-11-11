@@ -35,9 +35,13 @@
 | `diracord-interpreter` | Executa a AST. Limites de tempo/passos/memória. Trait `Host` |
 | `diracord-functions` | Funções embutidas: **uma pasta por categoria, um arquivo por função** (`moderation/ban.rs`) |
 | `diracord-dirabank` | Banco chave-valor embutido, arquivo único, driver plugável |
+| `diracord-engine` | Binário do motor: projeto (vários arquivos) + protocolo JSON por linhas ([engine-protocol.md](engine-protocol.md)) |
 
-Regras de dependência: `diagnostics` não depende de nada; `ast` e `value` só dependem
-de `diagnostics`; `lexer`/`parser` nunca dependem do `interpreter`.
+Regras de dependência: `diagnostics` não depende de nada; `ast` depende só de
+`diagnostics`; `value` não depende de nada; `lexer`/`parser` nunca dependem do
+`interpreter`. `functions` depende de `value` e `diagnostics` (funções são puras e
+devolvem um `Effect`); o `interpreter` usa `functions` e transforma efeitos em
+chamadas ao `Host` e ao `Store`. Nenhuma crate usa dependências externas.
 
 ## 4. Pacotes TypeScript (planejados)
 
@@ -46,9 +50,14 @@ de `diagnostics`; `lexer`/`parser` nunca dependem do `interpreter`.
 | `@diracord/cli` | `run`, `check`, `new`, `watch` |
 | `@diracord/config` | Lê `diracord.toml` e `.env` |
 | `@diracord/discord` | Gateway e REST diretos (cache mínimo), implementa o `Host` |
-| `@diracord/engine` | Binding do motor Rust (napi-rs) |
+| `@diracord/engine` | Cliente do motor Rust (hoje: processo `diracord-engine` por stdio; napi-rs depois) |
 
 O pacote principal publicado no npm se chama `diracord` (nome livre em 2026-11-11).
+Os pacotes não têm dependências em tempo de execução (Node 22.18+ já traz `fetch`,
+`WebSocket` e roda `.ts` direto).
+
+Estado atual (v0.1): o modo **serviço** (processo `diracord-engine` falando JSON por
+stdio) é o que funciona; o binding napi-rs (modo embutido) ainda não foi feito.
 
 ## 5. Como o motor roda (modos)
 Mesmo código, escolhido por configuração:
