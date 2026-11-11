@@ -413,5 +413,4 @@ button("confirm") {
 - Funções próprias (`fn nome(...) { }`): sintaxe em aberto.
 - Nome final de try/catch (`try/catch` é provisório; pode virar `testing`).
 - Alias `guild` para `server`.
-- Formato final do arquivo do Dirabank (o v0 é provisório).
 - Plugins WASM.

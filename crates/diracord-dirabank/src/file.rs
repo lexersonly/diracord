@@ -1,7 +1,7 @@
-//! File driver, format **v0 (provisional)**: an append-only log in one file.
+//! File driver, format **v1** (official since 2026-11-11): an append-only log in one file.
 //!
 //! ```text
-//! header : "DIRABANK" | version u16 = 0 | reserved u16
+//! header : "DIRABANK" | version u16 = 1 | reserved u16
 //! record : crc32 u32 | op u8 (1 = put, 2 = delete) | key_len u32 | value_len u32 | key | value
 //! ```
 //!
@@ -20,7 +20,9 @@ use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 const MAGIC: &[u8; 8] = b"DIRABANK";
-const VERSION: u16 = 0;
+const VERSION: u16 = 1;
+/// The provisional format; byte-for-byte the same layout, upgraded on open.
+const VERSION_V0: u16 = 0;
 const HEADER_LEN: u64 = 12;
 const RECORD_HEAD: usize = 13;
 const OP_PUT: u8 = 1;
@@ -105,7 +107,8 @@ impl FileDriver {
             return Err(DriverError::BadFile("não é um arquivo do Dirabank".into()));
         }
         let version = u16::from_le_bytes([h[8], h[9]]);
-        if version != VERSION {
+        let upgrade_v0 = version == VERSION_V0;
+        if version != VERSION && !upgrade_v0 {
             return Err(DriverError::BadFile(format!(
                 "versão {version} não suportada (esta é a {VERSION})"
             )));
@@ -128,6 +131,12 @@ impl FileDriver {
         if pos < len {
             // Torn or corrupt tail: keep everything before it.
             self.file.set_len(pos)?;
+            self.file.sync_data()?;
+        }
+        if upgrade_v0 {
+            // v0 → v1: only the version number changes.
+            self.file.seek(SeekFrom::Start(8))?;
+            self.file.write_all(&VERSION.to_le_bytes())?;
             self.file.sync_data()?;
         }
         self.index = index;

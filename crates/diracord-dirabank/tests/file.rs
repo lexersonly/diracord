@@ -118,3 +118,32 @@ fn memory_driver_works_as_store() {
     );
     assert!(!db.delete(&key("zzz")).unwrap());
 }
+
+#[test]
+fn new_files_are_v1_and_v0_files_are_upgraded() {
+    let path = temp("v0");
+    {
+        let mut db = Dirabank::open(&path).unwrap();
+        db.set(&key("coins"), Value::Int(3)).unwrap();
+    }
+    let bytes = std::fs::read(&path).unwrap();
+    assert_eq!(&bytes[..10], b"DIRABANK\x01\x00", "arquivos novos são v1");
+    // Simulate a file written by the provisional v0.
+    let mut old = bytes.clone();
+    old[8] = 0;
+    std::fs::write(&path, &old).unwrap();
+    let db = Dirabank::open(&path).unwrap();
+    assert_eq!(db.get(&key("coins")).unwrap(), Some(Value::Int(3)));
+    drop(db);
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        bytes,
+        "v0 vira v1 sem mudar mais nada"
+    );
+    let mut future = bytes;
+    future[8] = 9;
+    std::fs::write(&path, &future).unwrap();
+    assert!(
+        matches!(FileDriver::open(&path), Err(DriverError::BadFile(m)) if m.contains("versão 9"))
+    );
+}

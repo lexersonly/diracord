@@ -160,6 +160,10 @@ permissões por comando.
 único e leve. O driver é **plugável**, então outros bancos (como Turso) podem ser
 ligados por configuração depois.
 
+Formato do arquivo (decidido em 2026-11-11, `docs/rfcs/dirabank-format.md`, proposta A):
+**log só de acréscimo** com CRC32 por registro e índice em memória (os valores ficam no
+disco). Versão `1` no cabeçalho; arquivos `v0` são atualizados ao abrir.
+
 ## 9. Extensões
 
 Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
@@ -168,4 +172,3 @@ Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 - Nome do tratamento de erro (`try/catch` vs `testing`).
 - Sintaxe das funções próprias.
 - Alias `guild` para `server`.
-- Formato do arquivo do Dirabank.

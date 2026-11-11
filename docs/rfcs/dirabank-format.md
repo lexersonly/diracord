@@ -1,8 +1,8 @@
 # RFC: formato do arquivo do Dirabank
 
-> Status: **aberto** (SPEC §10: "Formato do arquivo do Dirabank").
-> Implementado hoje, de forma **provisória**: a proposta A, como formato `v0`.
-> O cabeçalho tem número de versão, então dá para trocar depois com migração.
+> Status: **decidido em 2026-11-11**: proposta **A** (log só de acréscimo).
+> É o formato oficial `v1`. Arquivos do `v0` provisório têm o mesmo layout e são
+> atualizados (só o número da versão) ao abrir.
 
 ## O que o formato precisa garantir
 
@@ -17,7 +17,7 @@ codificação binária de valores (`null`, bool, número, texto, lista, objeto).
 
 ---
 
-## Proposta A — Log só de acréscimo + índice em memória (implementada como v0)
+## Proposta A — Log só de acréscimo + índice em memória (escolhida, formato v1)
 
 Cada `set`/`delete` vira um registro no fim do arquivo:
 `crc32 | op | tamanho da chave | tamanho do valor | chave | valor`.
@@ -69,6 +69,7 @@ uma fotografia nova e o diário é zerado.
 reabertura). Equilibra RAM baixa e simplicidade. B só compensa se um bot tiver
 milhões de chaves; C gasta RAM demais para a meta do projeto.
 
-## Pergunta para o dono
+## Decisão
 
-Qual proposta vira o formato oficial `v1`? (A / B / C / outra)
+**A** vira o formato oficial `v1`. B e C ficam registradas para o caso de um bot
+precisar de milhões de chaves no futuro (o driver é plugável).

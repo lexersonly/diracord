@@ -18,9 +18,9 @@
 //!
 //! # File format
 //!
-//! The on-disk format is **provisional (v0)**: the SPEC lists it as an open
-//! decision. See `docs/rfcs/dirabank-format.md`. The header carries a version
-//! so files can be migrated when the final format is chosen.
+//! Format **v1**: an append-only log with CRC32 per record and an in-memory
+//! index (decided in `docs/rfcs/dirabank-format.md`, proposal A). Files from
+//! the provisional v0 have the same layout and are upgraded when opened.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
