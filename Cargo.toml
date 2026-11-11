@@ -17,6 +17,7 @@ diracord-parser = { path = "crates/diracord-parser" }
 diracord-interpreter = { path = "crates/diracord-interpreter" }
 diracord-functions = { path = "crates/diracord-functions" }
 diracord-dirabank = { path = "crates/diracord-dirabank" }
+diracord-engine = { path = "crates/diracord-engine" }
 
 # Small binaries matter: the target is a host with ~100 MB of RAM.
 [profile.release]

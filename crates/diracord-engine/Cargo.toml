@@ -1,0 +1,23 @@
+[package]
+name = "diracord-engine"
+description = "Diracord engine process: parser + interpreter + Dirabank, spoken to over JSON lines (stdio)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "diracord-engine"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+diracord-diagnostics.workspace = true
+diracord-ast.workspace = true
+diracord-value.workspace = true
+diracord-parser.workspace = true
+diracord-interpreter.workspace = true
+diracord-functions.workspace = true
+diracord-dirabank.workspace = true

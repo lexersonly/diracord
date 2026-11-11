@@ -21,6 +21,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "diracord-engine"
+version = "0.1.0"
+dependencies = [
+ "diracord-ast",
+ "diracord-diagnostics",
+ "diracord-dirabank",
+ "diracord-functions",
+ "diracord-interpreter",
+ "diracord-parser",
+ "diracord-value",
+]
+
+[[package]]
 name = "diracord-functions"
 version = "0.1.0"
 dependencies = [
