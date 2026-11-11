@@ -57,7 +57,11 @@ pub struct StoreKey {
 impl StoreKey {
     /// Creates a key.
     pub fn new(scope: Scope, owner: impl Into<String>, name: impl Into<String>) -> Self {
-        StoreKey { scope, owner: owner.into(), name: name.into() }
+        StoreKey {
+            scope,
+            owner: owner.into(),
+            name: name.into(),
+        }
     }
 }
 
@@ -71,7 +75,9 @@ pub struct StoreError {
 impl StoreError {
     /// Creates an error.
     pub fn new(message: impl Into<String>) -> Self {
-        StoreError { message: message.into() }
+        StoreError {
+            message: message.into(),
+        }
     }
 }
 

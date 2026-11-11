@@ -1,7 +1,10 @@
 //! Expressions, including calls with and without parentheses.
 
 use crate::parser::{PResult, Parser};
-use diracord_ast::{known, Arg, BinaryOp, CallStyle, Expr, ExprKind, Ident, Literal, ObjectField, TemplatePart, UnaryOp};
+use diracord_ast::{
+    known, Arg, BinaryOp, CallStyle, Expr, ExprKind, Ident, Literal, ObjectField, TemplatePart,
+    UnaryOp,
+};
 use diracord_diagnostics::{codes, Diagnostic, Fix, Span};
 use diracord_lexer::{StrPart, Token, TokenKind};
 
@@ -20,7 +23,9 @@ impl Parser<'_> {
 
     fn bare_call(&mut self) -> PResult<Expr> {
         let t = self.bump();
-        let TokenKind::Ident(name) = t.kind else { unreachable!() };
+        let TokenKind::Ident(name) = t.kind else {
+            unreachable!()
+        };
         let callee = Expr::new(ExprKind::Name(Ident::new(name, t.span)), t.span);
         let mut args = Vec::new();
         loop {
@@ -34,7 +39,14 @@ impl Parser<'_> {
             }
         }
         let span = t.span.to(Span::point(self.prev_end()));
-        Ok(Expr::new(ExprKind::Call { callee: Box::new(callee), args, style: CallStyle::Bare }, span))
+        Ok(Expr::new(
+            ExprKind::Call {
+                callee: Box::new(callee),
+                args,
+                style: CallStyle::Bare,
+            },
+            span,
+        ))
     }
 
     /// `name: value` or `value`.
@@ -43,13 +55,23 @@ impl Parser<'_> {
         if self.at_plain_ident() && self.nth(1).kind == TokenKind::Colon {
             let t = self.bump();
             self.bump(); // :
-            let TokenKind::Ident(n) = t.kind else { unreachable!() };
+            let TokenKind::Ident(n) = t.kind else {
+                unreachable!()
+            };
             let value = self.expr(true)?;
             let span = start.to(value.span);
-            return Ok(Arg { name: Some(Ident::new(n, t.span)), value, span });
+            return Ok(Arg {
+                name: Some(Ident::new(n, t.span)),
+                value,
+                span,
+            });
         }
         let value = self.expr(true)?;
-        Ok(Arg { name: None, span: value.span, value })
+        Ok(Arg {
+            name: None,
+            span: value.span,
+            value,
+        })
     }
 
     /// A full expression. `allow_obj = false` in conditions, where `{` opens the block.
@@ -76,7 +98,14 @@ impl Parser<'_> {
             self.bump();
             let rhs = self.binary(prec + 1, allow_obj)?;
             let span = lhs.span.to(rhs.span);
-            lhs = Expr::new(ExprKind::Binary { op, lhs: Box::new(lhs), rhs: Box::new(rhs) }, span);
+            lhs = Expr::new(
+                ExprKind::Binary {
+                    op,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                },
+                span,
+            );
         }
         Ok(lhs)
     }
@@ -95,7 +124,13 @@ impl Parser<'_> {
             self.leave();
             let e = e?;
             let span = start.to(e.span);
-            return Ok(Expr::new(ExprKind::Unary { op, expr: Box::new(e) }, span));
+            return Ok(Expr::new(
+                ExprKind::Unary {
+                    op,
+                    expr: Box::new(e),
+                },
+                span,
+            ));
         }
         self.postfix(allow_obj)
     }
@@ -109,20 +144,39 @@ impl Parser<'_> {
                     self.bump();
                     let field = self.field_name()?;
                     let span = e.span.to(field.span);
-                    e = Expr::new(ExprKind::Member { object: Box::new(e), field }, span);
+                    e = Expr::new(
+                        ExprKind::Member {
+                            object: Box::new(e),
+                            field,
+                        },
+                        span,
+                    );
                 }
                 TokenKind::LBracket if !t.space_before => {
                     self.bump();
                     let index = self.expr(true)?;
                     self.close(TokenKind::RBracket, t.span)?;
                     let span = e.span.to(Span::point(self.prev_end()));
-                    e = Expr::new(ExprKind::Index { object: Box::new(e), index: Box::new(index) }, span);
+                    e = Expr::new(
+                        ExprKind::Index {
+                            object: Box::new(e),
+                            index: Box::new(index),
+                        },
+                        span,
+                    );
                 }
                 TokenKind::LParen if !t.newline_before => {
                     self.bump();
                     let args = self.paren_args(t.span)?;
                     let span = e.span.to(Span::point(self.prev_end()));
-                    e = Expr::new(ExprKind::Call { callee: Box::new(e), args, style: CallStyle::Parens }, span);
+                    e = Expr::new(
+                        ExprKind::Call {
+                            callee: Box::new(e),
+                            args,
+                            style: CallStyle::Parens,
+                        },
+                        span,
+                    );
                 }
                 _ => break,
             }
@@ -148,7 +202,10 @@ impl Parser<'_> {
             if self.eat(&TokenKind::RParen) {
                 return Ok(args);
             }
-            if matches!(self.kind(), TokenKind::Eof | TokenKind::RBrace | TokenKind::LBrace) {
+            if matches!(
+                self.kind(),
+                TokenKind::Eof | TokenKind::RBrace | TokenKind::LBrace
+            ) {
                 self.close_paren(open)?;
                 return Ok(args);
             }
@@ -176,7 +233,10 @@ impl Parser<'_> {
         self.fail(
             Diagnostic::error(code, msg)
                 .with_label(open, "aberto aqui")
-                .with_secondary(t.span, format!("esperava `{sym}`, encontrei {}", t.kind.describe()))
+                .with_secondary(
+                    t.span,
+                    format!("esperava `{sym}`, encontrei {}", t.kind.describe()),
+                )
                 .with_fix(Fix::replace(format!("colocar `{sym}`"), here, sym, false)),
         )
     }
@@ -211,8 +271,11 @@ impl Parser<'_> {
                     lit(Literal::Null)
                 }
                 kw if known::is_keyword(kw) => self.fail(
-                    Diagnostic::error(codes::E0103, format!("Esperava um valor, mas `{kw}` é uma palavra reservada"))
-                        .with_label(t.span, "esperava um valor aqui"),
+                    Diagnostic::error(
+                        codes::E0103,
+                        format!("Esperava um valor, mas `{kw}` é uma palavra reservada"),
+                    )
+                    .with_label(t.span, "esperava um valor aqui"),
                 ),
                 name => {
                     self.bump();
@@ -229,8 +292,11 @@ impl Parser<'_> {
             TokenKind::LBrace if allow_obj => self.object(),
             TokenKind::Dollar => self.dollar_call(),
             _ => {
-                let mut d = Diagnostic::error(codes::E0103, format!("Esperava um valor, mas encontrei {}", t.kind.describe()))
-                    .with_label(t.span, "esperava um valor aqui");
+                let mut d = Diagnostic::error(
+                    codes::E0103,
+                    format!("Esperava um valor, mas encontrei {}", t.kind.describe()),
+                )
+                .with_label(t.span, "esperava um valor aqui");
                 if matches!(t.kind, TokenKind::Eof | TokenKind::RBrace) || t.newline_before {
                     d = d.with_help("a linha terminou antes do valor; complete a expressão");
                 }
@@ -255,7 +321,10 @@ impl Parser<'_> {
                 break;
             }
         }
-        Ok(Expr::new(ExprKind::List(items), open.to(Span::point(self.prev_end()))))
+        Ok(Expr::new(
+            ExprKind::List(items),
+            open.to(Span::point(self.prev_end())),
+        ))
     }
 
     /// `{ key: value, ... }` — commas or line breaks between fields.
@@ -283,9 +352,12 @@ impl Parser<'_> {
             if !self.eat(&TokenKind::Colon) {
                 let span = self.span();
                 return self.fail(
-                    Diagnostic::error(codes::E0100, format!("Faltou `:` depois do campo `{}`", key.name))
-                        .with_label(span, "esperava `:`")
-                        .with_help(format!("exemplo: {{ {}: \"valor\" }}", key.name)),
+                    Diagnostic::error(
+                        codes::E0100,
+                        format!("Faltou `:` depois do campo `{}`", key.name),
+                    )
+                    .with_label(span, "esperava `:`")
+                    .with_help(format!("exemplo: {{ {}: \"valor\" }}", key.name)),
                 );
             }
             let value = self.expr(true)?;
@@ -296,7 +368,10 @@ impl Parser<'_> {
                 return self.unexpected("`,` ou `}` depois do campo");
             }
         }
-        Ok(Expr::new(ExprKind::Object(fields), open.to(Span::point(self.prev_end()))))
+        Ok(Expr::new(
+            ExprKind::Object(fields),
+            open.to(Span::point(self.prev_end())),
+        ))
     }
 }
 
@@ -307,7 +382,9 @@ fn starts_bare_arg(tok: &Token, after: &Token) -> bool {
         return false;
     }
     match &tok.kind {
-        TokenKind::Ident(s) => !known::is_keyword(s) || matches!(s.as_str(), "true" | "false" | "null" | "not"),
+        TokenKind::Ident(s) => {
+            !known::is_keyword(s) || matches!(s.as_str(), "true" | "false" | "null" | "not")
+        }
         TokenKind::Int(_)
         | TokenKind::Float(_)
         | TokenKind::Str(_)
@@ -351,10 +428,19 @@ fn string_expr(parts: &[StrPart], span: Span) -> Expr {
             StrPart::Text(s) => TemplatePart::Text(s.clone()),
             StrPart::Var(v) => {
                 let (first, first_span) = &v.segments[0];
-                let mut e = Expr::new(ExprKind::Name(Ident::new(first.clone(), *first_span)), Span::new(v.span.start, first_span.end));
+                let mut e = Expr::new(
+                    ExprKind::Name(Ident::new(first.clone(), *first_span)),
+                    Span::new(v.span.start, first_span.end),
+                );
                 for (name, s) in &v.segments[1..] {
                     let span = e.span.to(*s);
-                    e = Expr::new(ExprKind::Member { object: Box::new(e), field: Ident::new(name.clone(), *s) }, span);
+                    e = Expr::new(
+                        ExprKind::Member {
+                            object: Box::new(e),
+                            field: Ident::new(name.clone(), *s),
+                        },
+                        span,
+                    );
                 }
                 TemplatePart::Expr(e)
             }

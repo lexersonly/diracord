@@ -36,7 +36,12 @@ pub fn tokenize(source: &str) -> (Vec<Token>, Vec<Diagnostic>) {
         }
         let start = c.pos();
         let Some(ch) = c.bump() else {
-            tokens.push(Token { kind: TokenKind::Eof, span: Span::point(start), newline_before: true, space_before: true });
+            tokens.push(Token {
+                kind: TokenKind::Eof,
+                span: Span::point(start),
+                newline_before: true,
+                space_before: true,
+            });
             break;
         };
         let kind = match ch {
@@ -79,7 +84,12 @@ pub fn tokenize(source: &str) -> (Vec<Token>, Vec<Diagnostic>) {
                 continue;
             }
         };
-        tokens.push(Token { kind, span: Span::new(start, c.pos()), newline_before: newline, space_before: space });
+        tokens.push(Token {
+            kind,
+            span: Span::new(start, c.pos()),
+            newline_before: newline,
+            space_before: space,
+        });
         newline = false;
         space = false;
     }
@@ -99,9 +109,14 @@ fn lex_number(c: &mut Cursor<'_>, start: u32, diags: &mut Vec<Diagnostic>) -> To
         c.eat_while(is_ident_continue);
         let span = Span::new(start, c.pos());
         diags.push(
-            Diagnostic::error(codes::E0003, format!("`{}` não é um número válido", c.slice(start)))
-                .with_label(span, "número inválido")
-                .with_help("números usam só dígitos, como 15 ou 1.5; nomes não podem começar com dígito"),
+            Diagnostic::error(
+                codes::E0003,
+                format!("`{}` não é um número válido", c.slice(start)),
+            )
+            .with_label(span, "número inválido")
+            .with_help(
+                "números usam só dígitos, como 15 ou 1.5; nomes não podem começar com dígito",
+            ),
         );
         return TokenKind::Int(0);
     }
@@ -115,7 +130,9 @@ fn lex_number(c: &mut Cursor<'_>, start: u32, diags: &mut Vec<Diagnostic>) -> To
                 diags.push(
                     Diagnostic::error(codes::E0003, "Esse número é grande demais")
                         .with_label(Span::new(start, c.pos()), "não cabe num número inteiro")
-                        .with_help("para ids do Discord, use texto entre aspas: \"123456789012345678901\""),
+                        .with_help(
+                            "para ids do Discord, use texto entre aspas: \"123456789012345678901\"",
+                        ),
                 );
                 TokenKind::Int(0)
             }
@@ -124,8 +141,11 @@ fn lex_number(c: &mut Cursor<'_>, start: u32, diags: &mut Vec<Diagnostic>) -> To
 }
 
 fn unexpected_char(ch: char, span: Span) -> Diagnostic {
-    let mut d = Diagnostic::error(codes::E0002, format!("O caractere `{ch}` não faz parte do Diracord"))
-        .with_label(span, "caractere inesperado");
+    let mut d = Diagnostic::error(
+        codes::E0002,
+        format!("O caractere `{ch}` não faz parte do Diracord"),
+    )
+    .with_label(span, "caractere inesperado");
     match ch {
         '&' => d = d.with_help("para \"e\" use `&&` ou `and`"),
         '|' => d = d.with_help("para \"ou\" use `||` ou `or`"),
@@ -177,17 +197,41 @@ mod tests {
         assert_eq!(
             kinds("== != <= >= => = && || ! < > + - * / %"),
             vec![
-                K::EqEq, K::NotEq, K::Le, K::Ge, K::FatArrow, K::Assign, K::AndAnd, K::OrOr, K::Bang, K::Lt,
-                K::Gt, K::Plus, K::Minus, K::Star, K::Slash, K::Percent, K::Eof
+                K::EqEq,
+                K::NotEq,
+                K::Le,
+                K::Ge,
+                K::FatArrow,
+                K::Assign,
+                K::AndAnd,
+                K::OrOr,
+                K::Bang,
+                K::Lt,
+                K::Gt,
+                K::Plus,
+                K::Minus,
+                K::Star,
+                K::Slash,
+                K::Percent,
+                K::Eof
             ]
         );
     }
 
     #[test]
     fn numbers() {
-        assert_eq!(kinds("15 1.5 1_000 x.y"), vec![
-            K::Int(15), K::Float(1.5), K::Int(1000), K::Ident("x".into()), K::Dot, K::Ident("y".into()), K::Eof
-        ]);
+        assert_eq!(
+            kinds("15 1.5 1_000 x.y"),
+            vec![
+                K::Int(15),
+                K::Float(1.5),
+                K::Int(1000),
+                K::Ident("x".into()),
+                K::Dot,
+                K::Ident("y".into()),
+                K::Eof
+            ]
+        );
     }
 
     #[test]
@@ -228,7 +272,10 @@ mod tests {
 
     #[test]
     fn comments_are_skipped() {
-        assert_eq!(kinds("a // nada aqui\nb"), vec![K::Ident("a".into()), K::Ident("b".into()), K::Eof]);
+        assert_eq!(
+            kinds("a // nada aqui\nb"),
+            vec![K::Ident("a".into()), K::Ident("b".into()), K::Eof]
+        );
     }
 
     #[test]

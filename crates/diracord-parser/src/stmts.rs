@@ -1,7 +1,9 @@
 //! Blocks and statements.
 
 use crate::parser::{Fail, PResult, Parser};
-use diracord_ast::{Block, ChainArm, Expr, ExprKind, IfBranch, Literal, Pattern, PatternKind, Stmt, StmtKind};
+use diracord_ast::{
+    Block, ChainArm, Expr, ExprKind, IfBranch, Literal, Pattern, PatternKind, Stmt, StmtKind,
+};
 use diracord_diagnostics::{codes, Diagnostic, Fix, Span};
 use diracord_lexer::{StrPart, TokenKind};
 
@@ -12,10 +14,16 @@ impl Parser<'_> {
             let t = self.peek().clone();
             let here = Span::point(self.prev_end());
             return self.fail(
-                Diagnostic::error(codes::E0105, format!("Esperava um bloco `{{ ... }}`, mas encontrei {}", t.kind.describe()))
-                    .with_label(t.span, "esperava `{`")
-                    .with_help("abra o bloco com `{` e feche com `}`")
-                    .with_fix(Fix::replace("abrir o bloco", here, " {", false)),
+                Diagnostic::error(
+                    codes::E0105,
+                    format!(
+                        "Esperava um bloco `{{ ... }}`, mas encontrei {}",
+                        t.kind.describe()
+                    ),
+                )
+                .with_label(t.span, "esperava `{`")
+                .with_help("abra o bloco com `{` e feche com `}`")
+                .with_fix(Fix::replace("abrir o bloco", here, " {", false)),
             );
         }
         self.enter()?;
@@ -33,14 +41,28 @@ impl Parser<'_> {
                         .with_label(open, "esta chave nunca foi fechada")
                         .with_secondary(end, "o arquivo acabou aqui")
                         .with_help("coloque `}` no fim do bloco")
-                        .with_fix(Fix::replace("fechar a chave no fim do arquivo", end, "}\n", false)),
+                        .with_fix(Fix::replace(
+                            "fechar a chave no fim do arquivo",
+                            end,
+                            "}\n",
+                            false,
+                        )),
                 );
                 break;
             }
             let before = self.peek().span.start;
             match self.stmt() {
                 Ok(s) => {
-                    let bare = matches!(&s.kind, StmtKind::Expr(Expr { kind: ExprKind::Call { style: diracord_ast::CallStyle::Bare, .. }, .. }));
+                    let bare = matches!(
+                        &s.kind,
+                        StmtKind::Expr(Expr {
+                            kind: ExprKind::Call {
+                                style: diracord_ast::CallStyle::Bare,
+                                ..
+                            },
+                            ..
+                        })
+                    );
                     stmts.push(s);
                     if self.end_of_stmt(bare).is_err() {
                         self.sync_stmt();
@@ -53,17 +75,28 @@ impl Parser<'_> {
             }
         }
         self.leave();
-        Ok(Block { stmts, span: open.to(Span::point(self.prev_end())) })
+        Ok(Block {
+            stmts,
+            span: open.to(Span::point(self.prev_end())),
+        })
     }
 
     /// After a statement: a line break, `;`, `}` or the end of the file.
     fn end_of_stmt(&mut self, after_bare_call: bool) -> PResult<()> {
         let t = self.peek().clone();
-        if t.newline_before || matches!(t.kind, TokenKind::Semi | TokenKind::RBrace | TokenKind::Eof) {
+        if t.newline_before
+            || matches!(t.kind, TokenKind::Semi | TokenKind::RBrace | TokenKind::Eof)
+        {
             return Ok(());
         }
-        let mut d = Diagnostic::error(codes::E0100, format!("Esperava o fim da linha, mas encontrei {}", t.kind.describe()))
-            .with_label(t.span, "isto deveria estar em outra linha");
+        let mut d = Diagnostic::error(
+            codes::E0100,
+            format!(
+                "Esperava o fim da linha, mas encontrei {}",
+                t.kind.describe()
+            ),
+        )
+        .with_label(t.span, "isto deveria estar em outra linha");
         if after_bare_call && is_operator(&t.kind) {
             d = d.with_help("numa chamada sem parênteses, cada argumento é separado por espaço; para fazer contas, use parênteses: reply(\"a\" + b)");
         } else {
@@ -93,8 +126,13 @@ impl Parser<'_> {
             "return" => {
                 self.bump();
                 let t = self.peek();
-                let ends = t.newline_before || matches!(t.kind, TokenKind::RBrace | TokenKind::Semi | TokenKind::Eof);
-                StmtKind::Return(if ends { None } else { Some(self.expr_or_bare()?) })
+                let ends = t.newline_before
+                    || matches!(t.kind, TokenKind::RBrace | TokenKind::Semi | TokenKind::Eof);
+                StmtKind::Return(if ends {
+                    None
+                } else {
+                    Some(self.expr_or_bare()?)
+                })
             }
             "stop" => {
                 self.bump();
@@ -110,7 +148,11 @@ impl Parser<'_> {
             }
             "else" | "catch" => {
                 let span = self.span();
-                let msg = if word == "else" { "`else` sem `if` antes" } else { "`catch` sem `try` antes" };
+                let msg = if word == "else" {
+                    "`else` sem `if` antes"
+                } else {
+                    "`catch` sem `try` antes"
+                };
                 return self.fail(
                     Diagnostic::error(codes::E0100, msg)
                         .with_label(span, "não tem com o que combinar")
@@ -120,16 +162,27 @@ impl Parser<'_> {
             "let" | "var" | "const" if matches!(self.nth(1).kind, TokenKind::Ident(_)) => {
                 let span = self.span();
                 self.report(
-                    Diagnostic::error(codes::E0100, format!("No Diracord, variáveis são criadas com `local`, não `{word}`"))
-                        .with_label(span, "use `local`")
-                        .with_help("exemplo: local x = 15")
-                        .with_fix(Fix::replace(format!("trocar `{word}` por `local`"), span, "local", true)),
+                    Diagnostic::error(
+                        codes::E0100,
+                        format!("No Diracord, variáveis são criadas com `local`, não `{word}`"),
+                    )
+                    .with_label(span, "use `local`")
+                    .with_help("exemplo: local x = 15")
+                    .with_fix(Fix::replace(
+                        format!("trocar `{word}` por `local`"),
+                        span,
+                        "local",
+                        true,
+                    )),
                 );
                 self.local()?
             }
             _ => self.expr_stmt()?,
         };
-        Ok(Stmt { kind, span: start.to(Span::point(self.prev_end())) })
+        Ok(Stmt {
+            kind,
+            span: start.to(Span::point(self.prev_end())),
+        })
     }
 
     fn local(&mut self) -> PResult<StmtKind> {
@@ -138,9 +191,12 @@ impl Parser<'_> {
         if !self.eat(&TokenKind::Assign) {
             let span = self.span();
             return self.fail(
-                Diagnostic::error(codes::E0100, format!("Faltou o valor inicial de `{}`", name.name))
-                    .with_label(span, "esperava `=`")
-                    .with_help(format!("exemplo: local {} = 0", name.name)),
+                Diagnostic::error(
+                    codes::E0100,
+                    format!("Faltou o valor inicial de `{}`", name.name),
+                )
+                .with_label(span, "esperava `=`")
+                .with_help(format!("exemplo: local {} = 0", name.name)),
             );
         }
         let value = self.expr_or_bare()?;
@@ -153,7 +209,10 @@ impl Parser<'_> {
             return Ok(StmtKind::Expr(target));
         }
         let eq = self.bump().span;
-        if !matches!(target.kind, ExprKind::Name(_) | ExprKind::Member { .. } | ExprKind::Index { .. }) {
+        if !matches!(
+            target.kind,
+            ExprKind::Name(_) | ExprKind::Member { .. } | ExprKind::Index { .. }
+        ) {
             self.report(
                 Diagnostic::error(codes::E0106, "Não dá para guardar um valor aqui")
                     .with_label(target.span, "isto não é uma variável")
@@ -187,7 +246,11 @@ impl Parser<'_> {
             let rhs = self.expr(false)?;
             let span = cond.span.to(rhs.span);
             return Ok(Expr::new(
-                ExprKind::Binary { op: diracord_ast::BinaryOp::Eq, lhs: Box::new(cond), rhs: Box::new(rhs) },
+                ExprKind::Binary {
+                    op: diracord_ast::BinaryOp::Eq,
+                    lhs: Box::new(cond),
+                    rhs: Box::new(rhs),
+                },
                 span,
             ));
         }
@@ -200,20 +263,31 @@ impl Parser<'_> {
         let start = self.bump().span; // if
         let cond = self.condition("if")?;
         let body = self.block()?;
-        branches.push(IfBranch { cond, body, span: start.to(Span::point(self.prev_end())) });
+        branches.push(IfBranch {
+            cond,
+            body,
+            span: start.to(Span::point(self.prev_end())),
+        });
         while self.at_word("else") {
             self.bump();
             if self.at_word("if") {
                 let s = self.bump().span;
                 let cond = self.condition("if")?;
                 let body = self.block()?;
-                branches.push(IfBranch { cond, body, span: s.to(Span::point(self.prev_end())) });
+                branches.push(IfBranch {
+                    cond,
+                    body,
+                    span: s.to(Span::point(self.prev_end())),
+                });
             } else {
                 otherwise = Some(self.block()?);
                 break;
             }
         }
-        Ok(StmtKind::If { branches, otherwise })
+        Ok(StmtKind::If {
+            branches,
+            otherwise,
+        })
     }
 
     fn for_stmt(&mut self) -> PResult<StmtKind> {
@@ -245,16 +319,26 @@ impl Parser<'_> {
             );
         }
         self.bump();
-        let catch_var = if self.at(&TokenKind::LBrace) { None } else { Some(self.ident("o nome do erro")?) };
+        let catch_var = if self.at(&TokenKind::LBrace) {
+            None
+        } else {
+            Some(self.ident("o nome do erro")?)
+        };
         let handler = self.block()?;
-        Ok(StmtKind::Try { body, catch_var, handler })
+        Ok(StmtKind::Try {
+            body,
+            catch_var,
+            handler,
+        })
     }
 
     fn chain(&mut self) -> PResult<StmtKind> {
         self.bump(); // chain
         let subject = self.condition("chain")?;
         if !self.at(&TokenKind::LBrace) {
-            return self.block().map(|_| unreachable!("block() fails without `{{`"));
+            return self
+                .block()
+                .map(|_| unreachable!("block() fails without `{{`"));
         }
         self.enter()?;
         let open = self.bump().span;
@@ -279,7 +363,10 @@ impl Parser<'_> {
             }
         }
         self.leave();
-        if let Some(i) = arms.iter().position(|a| a.pattern.kind == PatternKind::Wildcard) {
+        if let Some(i) = arms
+            .iter()
+            .position(|a| a.pattern.kind == PatternKind::Wildcard)
+        {
             if i + 1 < arms.len() {
                 self.report(
                     Diagnostic::error(codes::E0110, "O caso `_` precisa ser o último do chain")
@@ -306,9 +393,16 @@ impl Parser<'_> {
             self.block()?
         } else {
             let s = self.stmt()?;
-            Block { span: s.span, stmts: vec![s] }
+            Block {
+                span: s.span,
+                stmts: vec![s],
+            }
         };
-        Ok(ChainArm { span: pattern.span.to(body.span), pattern, body })
+        Ok(ChainArm {
+            span: pattern.span.to(body.span),
+            pattern,
+            body,
+        })
     }
 
     fn pattern(&mut self) -> PResult<Pattern> {
@@ -316,7 +410,10 @@ impl Parser<'_> {
         let lit = match &t.kind {
             TokenKind::Ident(s) if s == "_" => {
                 self.bump();
-                return Ok(Pattern { kind: PatternKind::Wildcard, span: t.span });
+                return Ok(Pattern {
+                    kind: PatternKind::Wildcard,
+                    span: t.span,
+                });
             }
             TokenKind::Ident(s) if s == "true" => Literal::Bool(true),
             TokenKind::Ident(s) if s == "false" => Literal::Bool(false),
@@ -327,9 +424,12 @@ impl Parser<'_> {
                 [StrPart::Text(s)] => Literal::Text(s.clone()),
                 _ => {
                     return self.fail(
-                        Diagnostic::error(codes::E0110, "O caso do chain não pode ter `$variável` no texto")
-                            .with_label(t.span, "texto com variável")
-                            .with_help("use um valor fixo, como \"sim\", ou compare com if"),
+                        Diagnostic::error(
+                            codes::E0110,
+                            "O caso do chain não pode ter `$variável` no texto",
+                        )
+                        .with_label(t.span, "texto com variável")
+                        .with_help("use um valor fixo, como \"sim\", ou compare com if"),
                     )
                 }
             },
@@ -342,18 +442,29 @@ impl Parser<'_> {
                     _ => return self.unexpected("um número depois do `-`"),
                 };
                 self.bump();
-                return Ok(Pattern { kind: PatternKind::Literal(lit), span: t.span.to(n.span) });
+                return Ok(Pattern {
+                    kind: PatternKind::Literal(lit),
+                    span: t.span.to(n.span),
+                });
             }
             _ => {
                 return self.fail(
-                    Diagnostic::error(codes::E0110, format!("{} não pode ser um caso do chain", t.kind.describe()))
-                        .with_label(t.span, "esperava um valor fixo ou `_`")
-                        .with_help("casos são valores fixos: 1, \"a\", true, null ou _ (qualquer outro)"),
+                    Diagnostic::error(
+                        codes::E0110,
+                        format!("{} não pode ser um caso do chain", t.kind.describe()),
+                    )
+                    .with_label(t.span, "esperava um valor fixo ou `_`")
+                    .with_help(
+                        "casos são valores fixos: 1, \"a\", true, null ou _ (qualquer outro)",
+                    ),
                 )
             }
         };
         self.bump();
-        Ok(Pattern { kind: PatternKind::Literal(lit), span: t.span })
+        Ok(Pattern {
+            kind: PatternKind::Literal(lit),
+            span: t.span,
+        })
     }
 }
 

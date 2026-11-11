@@ -111,12 +111,22 @@ pub struct ParamSpec {
 impl ParamSpec {
     /// A required parameter.
     pub const fn required(name: &'static str, kind: ParamKind, doc: &'static str) -> Self {
-        ParamSpec { name, kind, optional: false, doc }
+        ParamSpec {
+            name,
+            kind,
+            optional: false,
+            doc,
+        }
     }
 
     /// An optional parameter.
     pub const fn optional(name: &'static str, kind: ParamKind, doc: &'static str) -> Self {
-        ParamSpec { name, kind, optional: true, doc }
+        ParamSpec {
+            name,
+            kind,
+            optional: true,
+            doc,
+        }
     }
 }
 
@@ -151,7 +161,14 @@ impl FunctionSpec {
         let params: Vec<String> = self
             .params
             .iter()
-            .map(|p| format!("{}{}: {}", p.name, if p.optional { "?" } else { "" }, p.kind.as_str()))
+            .map(|p| {
+                format!(
+                    "{}{}: {}",
+                    p.name,
+                    if p.optional { "?" } else { "" },
+                    p.kind.as_str()
+                )
+            })
             .collect();
         format!("{}({})", self.name, params.join(", "))
     }
@@ -159,6 +176,9 @@ impl FunctionSpec {
 
 impl fmt::Debug for FunctionSpec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FunctionSpec").field("name", &self.name).field("category", &self.category).finish()
+        f.debug_struct("FunctionSpec")
+            .field("name", &self.name)
+            .field("category", &self.category)
+            .finish()
     }
 }

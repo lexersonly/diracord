@@ -5,7 +5,11 @@ use crate::token::{StrPart, VarPath};
 use diracord_diagnostics::{codes, Diagnostic, Fix, Span};
 
 /// Lexes a string; the cursor is just after the opening `"`.
-pub(crate) fn lex_string(c: &mut Cursor<'_>, open: u32, diags: &mut Vec<Diagnostic>) -> Vec<StrPart> {
+pub(crate) fn lex_string(
+    c: &mut Cursor<'_>,
+    open: u32,
+    diags: &mut Vec<Diagnostic>,
+) -> Vec<StrPart> {
     let mut parts = Vec::new();
     let mut text = String::new();
     loop {
@@ -17,7 +21,12 @@ pub(crate) fn lex_string(c: &mut Cursor<'_>, open: u32, diags: &mut Vec<Diagnost
                         .with_label(Span::new(open, open + 1), "o texto começa aqui")
                         .with_secondary(Span::point(here), "e não termina nesta linha")
                         .with_help("coloque `\"` no fim do texto")
-                        .with_fix(Fix::replace("fechar as aspas", Span::point(here), "\"", false)),
+                        .with_fix(Fix::replace(
+                            "fechar as aspas",
+                            Span::point(here),
+                            "\"",
+                            false,
+                        )),
                 );
                 break;
             }
@@ -40,10 +49,20 @@ pub(crate) fn lex_string(c: &mut Cursor<'_>, open: u32, diags: &mut Vec<Diagnost
                     Some(other) => {
                         let span = Span::new(here, c.pos());
                         diags.push(
-                            Diagnostic::error(codes::E0004, format!("O escape `\\{other}` não existe"))
-                                .with_label(span, "escape desconhecido")
-                                .with_help("use \\n, \\t, \\\", \\\\ ou \\$; para uma barra, escreva \\\\")
-                                .with_fix(Fix::replace("escrever a barra", Span::new(here, here + 1), "\\\\", true)),
+                            Diagnostic::error(
+                                codes::E0004,
+                                format!("O escape `\\{other}` não existe"),
+                            )
+                            .with_label(span, "escape desconhecido")
+                            .with_help(
+                                "use \\n, \\t, \\\", \\\\ ou \\$; para uma barra, escreva \\\\",
+                            )
+                            .with_fix(Fix::replace(
+                                "escrever a barra",
+                                Span::new(here, here + 1),
+                                "\\\\",
+                                true,
+                            )),
                         );
                         text.push(other);
                     }
@@ -59,10 +78,18 @@ pub(crate) fn lex_string(c: &mut Cursor<'_>, open: u32, diags: &mut Vec<Diagnost
                 } else {
                     c.bump();
                     diags.push(
-                        Diagnostic::error(codes::E0005, "Um `$` no texto precisa de um nome depois")
-                            .with_label(Span::new(here, here + 1), "falta o nome da variável")
-                            .with_help("para escrever o símbolo $, use \\$")
-                            .with_fix(Fix::replace("escrever \\$", Span::point(here), "\\", true)),
+                        Diagnostic::error(
+                            codes::E0005,
+                            "Um `$` no texto precisa de um nome depois",
+                        )
+                        .with_label(Span::new(here, here + 1), "falta o nome da variável")
+                        .with_help("para escrever o símbolo $, use \\$")
+                        .with_fix(Fix::replace(
+                            "escrever \\$",
+                            Span::point(here),
+                            "\\",
+                            true,
+                        )),
                     );
                     text.push('$');
                 }
@@ -93,5 +120,8 @@ fn lex_path(c: &mut Cursor<'_>, dollar: u32) -> VarPath {
         }
     }
     let end = segments.last().map(|s| s.1.end).unwrap_or(dollar + 1);
-    VarPath { segments, span: Span::new(dollar, end) }
+    VarPath {
+        segments,
+        span: Span::new(dollar, end),
+    }
 }

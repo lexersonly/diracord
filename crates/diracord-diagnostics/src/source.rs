@@ -27,7 +27,11 @@ impl SourceFile {
                 line_starts.push(i as u32 + 1);
             }
         }
-        SourceFile { name: name.into(), text, line_starts }
+        SourceFile {
+            name: name.into(),
+            text,
+            line_starts,
+        }
     }
 
     /// The file name given at creation.
@@ -58,7 +62,10 @@ impl SourceFile {
             end -= 1;
         }
         let col = self.text[start..end].chars().count() as u32 + 1;
-        LineCol { line: line_idx as u32 + 1, col }
+        LineCol {
+            line: line_idx as u32 + 1,
+            col,
+        }
     }
 
     /// Text of a 1-based line, without the line break. Out of range gives `""`.
@@ -78,7 +85,10 @@ impl SourceFile {
     /// Byte offset where a 1-based line starts.
     pub fn line_start(&self, line: u32) -> u32 {
         let idx = (line.max(1) - 1) as usize;
-        self.line_starts.get(idx).copied().unwrap_or(self.text.len() as u32)
+        self.line_starts
+            .get(idx)
+            .copied()
+            .unwrap_or(self.text.len() as u32)
     }
 }
 

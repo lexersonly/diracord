@@ -15,9 +15,12 @@ impl Parser<'_> {
             TokenKind::Ident(n) if !t.space_before => n.clone(),
             _ => {
                 return self.fail(
-                    Diagnostic::error(codes::E0104, "Depois do `$` vem o nome de uma função, colado")
-                        .with_label(dollar, "faltou o nome")
-                        .with_help("exemplo: $ban[user;reason]"),
+                    Diagnostic::error(
+                        codes::E0104,
+                        "Depois do `$` vem o nome de uma função, colado",
+                    )
+                    .with_label(dollar, "faltou o nome")
+                    .with_help("exemplo: $ban[user;reason]"),
                 )
             }
         };
@@ -42,12 +45,27 @@ impl Parser<'_> {
             let parts: Vec<&str> = args.iter().map(|a| self.text(a.span)).collect();
             let replacement = format!("{name}({})", parts.join(", "));
             self.report(
-                Diagnostic::error(codes::E0108, format!("O atalho `${name}[...]` está desligado"))
-                    .with_label(span, "atalho $ desligado")
-                    .with_help("ligue em diracord.toml: [syntax] dollar = true")
-                    .with_fix(Fix::replace(format!("escrever `{replacement}`"), span, replacement.clone(), true)),
+                Diagnostic::error(
+                    codes::E0108,
+                    format!("O atalho `${name}[...]` está desligado"),
+                )
+                .with_label(span, "atalho $ desligado")
+                .with_help("ligue em diracord.toml: [syntax] dollar = true")
+                .with_fix(Fix::replace(
+                    format!("escrever `{replacement}`"),
+                    span,
+                    replacement.clone(),
+                    true,
+                )),
             );
         }
-        Ok(Expr::new(ExprKind::Call { callee: Box::new(callee), args, style: CallStyle::Dollar }, span))
+        Ok(Expr::new(
+            ExprKind::Call {
+                callee: Box::new(callee),
+                args,
+                style: CallStyle::Dollar,
+            },
+            span,
+        ))
     }
 }

@@ -47,12 +47,20 @@ pub fn render(diag: &Diagnostic, file: &SourceFile, color: bool) -> String {
         Severity::Note => CYAN,
     };
     let head = format!("{}[{}]", diag.severity.label(), diag.code);
-    let _ = writeln!(out, "{}{}", p.paint(sev_color, &head), p.paint(BOLD, &format!(": {}", diag.message)));
+    let _ = writeln!(
+        out,
+        "{}{}",
+        p.paint(sev_color, &head),
+        p.paint(BOLD, &format!(": {}", diag.message))
+    );
 
     let mut labels: Vec<&Label> = diag.labels.iter().collect();
     labels.sort_by_key(|l| (l.span.start, !l.primary));
     let lines: Vec<u32> = {
-        let mut v: Vec<u32> = labels.iter().map(|l| file.line_col(l.span.start).line).collect();
+        let mut v: Vec<u32> = labels
+            .iter()
+            .map(|l| file.line_col(l.span.start).line)
+            .collect();
         v.dedup();
         v
     };
@@ -62,7 +70,14 @@ pub fn render(diag: &Diagnostic, file: &SourceFile, color: bool) -> String {
 
     if let Some(span) = diag.primary_span() {
         let lc = file.line_col(span.start);
-        let _ = writeln!(out, "{pad}{} {}:{}:{}", p.paint(BLUE, "-->"), file.name(), lc.line, lc.col);
+        let _ = writeln!(
+            out,
+            "{pad}{} {}:{}:{}",
+            p.paint(BLUE, "-->"),
+            file.name(),
+            lc.line,
+            lc.col
+        );
         let _ = writeln!(out, "{pad} {bar}");
         let mut last_line = 0;
         for line in &lines {
@@ -72,19 +87,38 @@ pub fn render(diag: &Diagnostic, file: &SourceFile, color: bool) -> String {
             last_line = *line;
             let text = file.line_text(*line);
             let num = format!("{line:>gutter$}");
-            let _ = writeln!(out, "{} {bar} {}", p.paint(BLUE, &num), text.replace('\t', " "));
-            for label in labels.iter().filter(|l| file.line_col(l.span.start).line == *line) {
+            let _ = writeln!(
+                out,
+                "{} {bar} {}",
+                p.paint(BLUE, &num),
+                text.replace('\t', " ")
+            );
+            for label in labels
+                .iter()
+                .filter(|l| file.line_col(l.span.start).line == *line)
+            {
                 let start = file.line_col(label.span.start);
                 // Underline up to the end of this line if the span is longer.
-                let end_offset = label.span.end.min(file.line_start(*line) + text.len() as u32);
+                let end_offset = label
+                    .span
+                    .end
+                    .min(file.line_start(*line) + text.len() as u32);
                 let end = file.line_col(end_offset.max(label.span.start));
                 let width = (end.col.saturating_sub(start.col)).max(1) as usize;
                 let mark = if label.primary { "^" } else { "-" };
                 let marks = mark.repeat(width);
                 let color = if label.primary { sev_color } else { BLUE };
                 let caret = format!("{}{}", " ".repeat(start.col as usize - 1), marks);
-                let msg = if label.message.is_empty() { String::new() } else { format!(" {}", label.message) };
-                let _ = writeln!(out, "{pad} {bar} {}", p.paint(color, &format!("{caret}{msg}")));
+                let msg = if label.message.is_empty() {
+                    String::new()
+                } else {
+                    format!(" {}", label.message)
+                };
+                let _ = writeln!(
+                    out,
+                    "{pad} {bar} {}",
+                    p.paint(color, &format!("{caret}{msg}"))
+                );
             }
         }
         if !diag.help.is_empty() || !diag.notes.is_empty() || !diag.fixes.is_empty() {
@@ -102,7 +136,11 @@ pub fn render(diag: &Diagnostic, file: &SourceFile, color: bool) -> String {
         let _ = writeln!(out, "{pad} {eq} {}: {help}", p.paint(BOLD, "ajuda"));
     }
     for fix in &diag.fixes {
-        let kind = if fix.safe { "correção automática" } else { "correção sugerida" };
+        let kind = if fix.safe {
+            "correção automática"
+        } else {
+            "correção sugerida"
+        };
         let _ = writeln!(out, "{pad} {eq} {}: {}", p.paint(BOLD, kind), fix.message);
     }
     out
@@ -119,18 +157,29 @@ pub fn render_all(diags: &[Diagnostic], file: &SourceFile, color: bool) -> Strin
         out.push_str(&render(d, file, color));
         out.push('\n');
     }
-    let errors = diags.iter().filter(|d| d.severity == Severity::Error).count();
-    let warnings = diags.iter().filter(|d| d.severity == Severity::Warning).count();
+    let errors = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
+    let warnings = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Warning)
+        .count();
     let _ = writeln!(out, "{}", summary(errors, warnings));
     out
 }
 
 fn summary(errors: usize, warnings: usize) -> String {
-    let plural = |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
+    let plural =
+        |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
     match (errors, warnings) {
         (0, w) => plural(w, "aviso", "avisos"),
         (e, 0) => plural(e, "erro", "erros"),
-        (e, w) => format!("{}, {}", plural(e, "erro", "erros"), plural(w, "aviso", "avisos")),
+        (e, w) => format!(
+            "{}, {}",
+            plural(e, "erro", "erros"),
+            plural(w, "aviso", "avisos")
+        ),
     }
 }
 
@@ -140,11 +189,19 @@ mod tests {
     use crate::{codes, Fix, Span};
 
     fn sample() -> (SourceFile, Diagnostic) {
-        let src = SourceFile::new("commands/ping.dcs", "command(\"ping\") {\n  rpely \"Pong!\"\n}\n");
+        let src = SourceFile::new(
+            "commands/ping.dcs",
+            "command(\"ping\") {\n  rpely \"Pong!\"\n}\n",
+        );
         let d = Diagnostic::error(codes::E0201, "a função `rpely` não existe")
             .with_label(Span::new(20, 25), "função desconhecida")
             .with_help("você quis dizer `reply`?")
-            .with_fix(Fix::replace("trocar `rpely` por `reply`", Span::new(20, 25), "reply", true));
+            .with_fix(Fix::replace(
+                "trocar `rpely` por `reply`",
+                Span::new(20, 25),
+                "reply",
+                true,
+            ));
         (src, d)
     }
 
@@ -174,7 +231,8 @@ erro[E0201]: a função `rpely` não existe
     #[test]
     fn empty_span_gets_one_caret() {
         let src = SourceFile::new("a.dcs", "command(\"x\") {");
-        let d = Diagnostic::error(codes::E0101, "Faltou fechar a chave").with_label(Span::point(14), "aqui");
+        let d = Diagnostic::error(codes::E0101, "Faltou fechar a chave")
+            .with_label(Span::point(14), "aqui");
         let text = render(&d, &src, false);
         assert!(text.contains("              ^ aqui"), "{text}");
     }

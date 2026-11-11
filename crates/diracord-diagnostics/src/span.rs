@@ -19,7 +19,10 @@ impl Span {
     /// Creates a span. If `end < start` the values are swapped.
     pub fn new(start: u32, end: u32) -> Self {
         if end < start {
-            Span { start: end, end: start }
+            Span {
+                start: end,
+                end: start,
+            }
         } else {
             Span { start, end }
         }
@@ -27,7 +30,10 @@ impl Span {
 
     /// An empty span at `offset` (used for "something is missing here").
     pub fn point(offset: u32) -> Self {
-        Span { start: offset, end: offset }
+        Span {
+            start: offset,
+            end: offset,
+        }
     }
 
     /// Length in bytes.
@@ -42,7 +48,10 @@ impl Span {
 
     /// The smallest span covering both `self` and `other`.
     pub fn to(self, other: Span) -> Span {
-        Span { start: self.start.min(other.start), end: self.end.max(other.end) }
+        Span {
+            start: self.start.min(other.start),
+            end: self.end.max(other.end),
+        }
     }
 
     /// `true` when `offset` is inside the span.

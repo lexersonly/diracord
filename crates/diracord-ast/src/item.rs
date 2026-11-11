@@ -56,7 +56,10 @@ impl Program {
                 i
             }));
         }
-        Program { items, span: Span::default() }
+        Program {
+            items,
+            span: Span::default(),
+        }
     }
 }
 
@@ -228,14 +231,21 @@ mod tests {
 
     #[test]
     fn interaction_kind_roundtrip() {
-        for k in [InteractionKind::Button, InteractionKind::Menu, InteractionKind::Modal] {
+        for k in [
+            InteractionKind::Button,
+            InteractionKind::Menu,
+            InteractionKind::Modal,
+        ] {
             assert_eq!(InteractionKind::from_name(k.as_str()), Some(k));
         }
     }
 
     #[test]
     fn program_lookup_and_merge() {
-        let body = Block { stmts: vec![], span: Span::new(10, 12) };
+        let body = Block {
+            stmts: vec![],
+            span: Span::new(10, 12),
+        };
         let cmd = |name: &str, s: u32| Item {
             kind: ItemKind::Command(CommandDef {
                 name: Spanned::new(name.to_string(), Span::new(s, s + 4)),
@@ -245,8 +255,14 @@ mod tests {
             span: Span::new(s, s + 12),
             file: FileId::default(),
         };
-        let a = Program { items: vec![cmd("ping", 0)], span: Span::new(0, 12) };
-        let b = Program { items: vec![cmd("pong", 0)], span: Span::new(0, 20) };
+        let a = Program {
+            items: vec![cmd("ping", 0)],
+            span: Span::new(0, 12),
+        };
+        let b = Program {
+            items: vec![cmd("pong", 0)],
+            span: Span::new(0, 20),
+        };
         let p = Program::merge([(FileId(0), a), (FileId(1), b)]);
         assert_eq!(p.commands().count(), 2);
         assert!(p.command("pong").is_some());

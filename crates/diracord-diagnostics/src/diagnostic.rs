@@ -80,13 +80,21 @@ impl Diagnostic {
 
     /// Adds a primary label.
     pub fn with_label(mut self, span: Span, message: impl Into<String>) -> Self {
-        self.labels.push(Label { span, message: message.into(), primary: true });
+        self.labels.push(Label {
+            span,
+            message: message.into(),
+            primary: true,
+        });
         self
     }
 
     /// Adds a secondary label.
     pub fn with_secondary(mut self, span: Span, message: impl Into<String>) -> Self {
-        self.labels.push(Label { span, message: message.into(), primary: false });
+        self.labels.push(Label {
+            span,
+            message: message.into(),
+            primary: false,
+        });
         self
     }
 
@@ -110,7 +118,11 @@ impl Diagnostic {
 
     /// The span of the first primary label, if any.
     pub fn primary_span(&self) -> Option<Span> {
-        self.labels.iter().find(|l| l.primary).or(self.labels.first()).map(|l| l.span)
+        self.labels
+            .iter()
+            .find(|l| l.primary)
+            .or(self.labels.first())
+            .map(|l| l.span)
     }
 
     /// `true` for [`Severity::Error`].

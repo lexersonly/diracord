@@ -14,7 +14,10 @@ pub struct Ident {
 impl Ident {
     /// Creates an identifier.
     pub fn new(name: impl Into<String>, span: Span) -> Self {
-        Ident { name: name.into(), span }
+        Ident {
+            name: name.into(),
+            span,
+        }
     }
 
     /// The name.

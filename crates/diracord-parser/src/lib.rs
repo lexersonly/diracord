@@ -64,5 +64,8 @@ pub fn parse(source: &str, options: &ParseOptions) -> ParseOutput {
     let program = p.program();
     diagnostics.extend(p.into_diagnostics());
     diagnostics.sort_by_key(|d| d.primary_span().map(|s| s.start).unwrap_or(0));
-    ParseOutput { program, diagnostics }
+    ParseOutput {
+        program,
+        diagnostics,
+    }
 }

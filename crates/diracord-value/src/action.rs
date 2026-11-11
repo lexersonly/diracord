@@ -21,7 +21,11 @@ pub struct Action {
 impl Action {
     /// Creates an action with positional arguments.
     pub fn new(name: impl Into<String>, args: Vec<Value>) -> Self {
-        Action { name: name.into(), args, options: Map::new() }
+        Action {
+            name: name.into(),
+            args,
+            options: Map::new(),
+        }
     }
 
     /// Adds a named option.

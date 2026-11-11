@@ -24,10 +24,18 @@ pub struct Fix {
 
 impl Fix {
     /// A single-edit fix.
-    pub fn replace(message: impl Into<String>, span: Span, replacement: impl Into<String>, safe: bool) -> Self {
+    pub fn replace(
+        message: impl Into<String>,
+        span: Span,
+        replacement: impl Into<String>,
+        safe: bool,
+    ) -> Self {
         Fix {
             message: message.into(),
-            edits: vec![Edit { span, replacement: replacement.into() }],
+            edits: vec![Edit {
+                span,
+                replacement: replacement.into(),
+            }],
             safe,
         }
     }
@@ -63,7 +71,11 @@ impl std::error::Error for FixError {}
 /// assert_eq!(apply_fixes("rpely \"oi\"", &[fix]).unwrap(), "reply \"oi\"");
 /// ```
 pub fn apply_fixes(text: &str, fixes: &[Fix]) -> Result<String, FixError> {
-    let mut edits: Vec<&Edit> = fixes.iter().filter(|f| f.safe).flat_map(|f| f.edits.iter()).collect();
+    let mut edits: Vec<&Edit> = fixes
+        .iter()
+        .filter(|f| f.safe)
+        .flat_map(|f| f.edits.iter())
+        .collect();
     edits.sort_by_key(|e| (e.span.start, e.span.end));
     for e in &edits {
         let r = e.span.range();
@@ -113,12 +125,18 @@ mod tests {
             Fix::replace("1", Span::new(0, 3), "x", true),
             Fix::replace("2", Span::new(2, 4), "y", true),
         ];
-        assert!(matches!(apply_fixes("abcd", &fixes), Err(FixError::Overlap(..))));
+        assert!(matches!(
+            apply_fixes("abcd", &fixes),
+            Err(FixError::Overlap(..))
+        ));
     }
 
     #[test]
     fn rejects_out_of_bounds() {
         let f = Fix::replace("x", Span::new(0, 10), "y", true);
-        assert!(matches!(apply_fixes("abc", &[f]), Err(FixError::OutOfBounds(_))));
+        assert!(matches!(
+            apply_fixes("abc", &[f]),
+            Err(FixError::OutOfBounds(_))
+        ));
     }
 }

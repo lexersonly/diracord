@@ -236,7 +236,10 @@ mod tests {
 
     #[test]
     fn as_ident() {
-        let e = Expr::new(ExprKind::Name(Ident::new("x", Span::new(0, 1))), Span::new(0, 1));
+        let e = Expr::new(
+            ExprKind::Name(Ident::new("x", Span::new(0, 1))),
+            Span::new(0, 1),
+        );
         assert_eq!(e.as_ident().map(Ident::as_str), Some("x"));
         let l = Expr::new(ExprKind::Literal(Literal::Null), Span::new(0, 4));
         assert!(l.as_ident().is_none());

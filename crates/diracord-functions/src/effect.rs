@@ -65,7 +65,12 @@ pub struct FnError {
 impl FnError {
     /// Creates an error.
     pub fn new(code: Code, message: impl Into<String>) -> Self {
-        FnError { code, message: message.into(), help: None, arg: None }
+        FnError {
+            code,
+            message: message.into(),
+            help: None,
+            arg: None,
+        }
     }
 
     /// Sets the help line.

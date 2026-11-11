@@ -16,7 +16,9 @@ pub fn edit_distance(a: &str, b: &str) -> usize {
         rows[cur] = i;
         for j in 1..=b.len() {
             let cost = usize::from(a[i - 1] != b[j - 1]);
-            let mut d = (rows[prev + j - 1] + cost).min(rows[prev + j] + 1).min(rows[cur + j - 1] + 1);
+            let mut d = (rows[prev + j - 1] + cost)
+                .min(rows[prev + j] + 1)
+                .min(rows[cur + j - 1] + 1);
             if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
                 d = d.min(rows[prev2 + j - 2] + 1);
             }
@@ -74,7 +76,10 @@ mod tests {
 
     #[test]
     fn suggests_case_difference() {
-        assert_eq!(did_you_mean("memberjoin", ["memberJoin"]), Some("memberJoin"));
+        assert_eq!(
+            did_you_mean("memberjoin", ["memberJoin"]),
+            Some("memberJoin")
+        );
     }
 
     #[test]

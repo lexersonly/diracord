@@ -14,7 +14,10 @@ pub struct Registry {
 impl Registry {
     /// Builds a registry from specs. Later duplicates are ignored.
     pub fn new(specs: impl IntoIterator<Item = &'static FunctionSpec>) -> Self {
-        let mut r = Registry { specs: Vec::new(), by_name: HashMap::new() };
+        let mut r = Registry {
+            specs: Vec::new(),
+            by_name: HashMap::new(),
+        };
         for s in specs {
             if !r.by_name.contains_key(s.name) {
                 r.by_name.insert(s.name, r.specs.len());
@@ -59,4 +62,63 @@ impl Registry {
 pub fn registry() -> &'static Registry {
     static REG: OnceLock<Registry> = OnceLock::new();
     REG.get_or_init(|| Registry::new(builtins::all().iter().copied()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn has_core_functions() {
+        let r = registry();
+        for name in [
+            "reply", "send", "ban", "kick", "timeout", "get", "set", "channel", "upper", "random",
+        ] {
+            assert!(r.get(name).is_some(), "falta {name}");
+        }
+        assert!(r.len() >= 40);
+    }
+
+    #[test]
+    fn names_are_unique_and_categories_match_folders() {
+        let mut seen = std::collections::HashSet::new();
+        for s in registry().iter() {
+            assert!(seen.insert(s.name), "repetido: {}", s.name);
+            assert!(
+                !s.summary.is_empty() && !s.example.is_empty(),
+                "{} sem doc",
+                s.name
+            );
+            assert!(
+                s.example.contains(s.name),
+                "o exemplo de {} não usa a função",
+                s.name
+            );
+        }
+    }
+
+    #[test]
+    fn optional_params_come_last() {
+        for s in registry().iter() {
+            let first_opt = s
+                .params
+                .iter()
+                .position(|p| p.optional)
+                .unwrap_or(s.params.len());
+            assert!(
+                s.params[first_opt..].iter().all(|p| p.optional),
+                "{}",
+                s.name
+            );
+        }
+    }
+
+    #[test]
+    fn suggests_typos() {
+        let r = registry();
+        assert_eq!(
+            diracord_diagnostics::did_you_mean("rpely", r.names()),
+            Some("reply")
+        );
+    }
 }

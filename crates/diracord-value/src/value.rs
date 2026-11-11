@@ -98,7 +98,9 @@ impl Value {
             }),
             Value::Text(s) => {
                 let digits: String = s.chars().filter(char::is_ascii_digit).collect();
-                let only_mention = s.chars().all(|c| c.is_ascii_digit() || "<@!&#>".contains(c));
+                let only_mention = s
+                    .chars()
+                    .all(|c| c.is_ascii_digit() || "<@!&#>".contains(c));
                 (only_mention && !digits.is_empty()).then_some(digits)
             }
             Value::Int(i) if *i >= 0 => Some(i.to_string()),
@@ -118,7 +120,12 @@ impl Value {
             Value::Null | Value::Bool(_) | Value::Int(_) | Value::Float(_) => BASE,
             Value::Text(s) => BASE + s.len(),
             Value::List(l) => BASE + l.iter().map(Value::approx_size).sum::<usize>(),
-            Value::Object(m) => BASE + m.iter().map(|(k, v)| k.len() + 32 + v.approx_size()).sum::<usize>(),
+            Value::Object(m) => {
+                BASE + m
+                    .iter()
+                    .map(|(k, v)| k.len() + 32 + v.approx_size())
+                    .sum::<usize>()
+            }
         }
     }
 }
@@ -248,7 +255,10 @@ mod tests {
         assert_eq!(Value::Null.to_string(), "");
         assert_eq!(Value::Float(2.0).to_string(), "2");
         assert_eq!(Value::Float(2.5).to_string(), "2.5");
-        assert_eq!(Value::List(vec![1i64.into(), "a".into()]).to_string(), "1, a");
+        assert_eq!(
+            Value::List(vec![1i64.into(), "a".into()]).to_string(),
+            "1, a"
+        );
         let user = Value::object([("name", "Ana".into()), ("mention", "<@1>".into())]);
         assert_eq!(user.to_string(), "<@1>");
         let embed = Value::object([("title", Value::from("Oi")), ("n", Value::Int(1))]);
@@ -257,7 +267,12 @@ mod tests {
 
     #[test]
     fn entity_ids() {
-        assert_eq!(Value::object([("id", Value::from("42"))]).entity_id().as_deref(), Some("42"));
+        assert_eq!(
+            Value::object([("id", Value::from("42"))])
+                .entity_id()
+                .as_deref(),
+            Some("42")
+        );
         assert_eq!(Value::from("<@!123>").entity_id().as_deref(), Some("123"));
         assert_eq!(Value::from("hello").entity_id(), None);
         assert_eq!(Value::Int(7).entity_id().as_deref(), Some("7"));

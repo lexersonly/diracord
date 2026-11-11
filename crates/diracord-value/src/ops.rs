@@ -32,7 +32,11 @@ pub enum OpError {
 impl fmt::Display for OpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            OpError::TypeMismatch { op, left, right: "" } => {
+            OpError::TypeMismatch {
+                op,
+                left,
+                right: "",
+            } => {
                 write!(f, "não dá para usar `{op}` com {left}")
             }
             OpError::TypeMismatch { op, left, right } => {
@@ -49,10 +53,20 @@ impl std::error::Error for OpError {}
 type R = Result<Value, OpError>;
 
 fn mismatch(op: &'static str, a: &Value, b: &Value) -> OpError {
-    OpError::TypeMismatch { op, left: a.type_name(), right: b.type_name() }
+    OpError::TypeMismatch {
+        op,
+        left: a.type_name(),
+        right: b.type_name(),
+    }
 }
 
-fn num_op(op: &'static str, a: &Value, b: &Value, int: fn(i64, i64) -> Option<i64>, float: fn(f64, f64) -> f64) -> R {
+fn num_op(
+    op: &'static str,
+    a: &Value,
+    b: &Value,
+    int: fn(i64, i64) -> Option<i64>,
+    float: fn(f64, f64) -> f64,
+) -> R {
     match (a, b) {
         (Value::Int(x), Value::Int(y)) => int(*x, *y).map(Value::Int).ok_or(OpError::Overflow),
         _ => match (a.as_f64(), b.as_f64()) {
@@ -109,7 +123,11 @@ pub fn neg(a: &Value) -> R {
     match a {
         Value::Int(x) => x.checked_neg().map(Value::Int).ok_or(OpError::Overflow),
         Value::Float(x) => Ok(Value::Float(-x)),
-        _ => Err(OpError::TypeMismatch { op: "-", left: a.type_name(), right: "" }),
+        _ => Err(OpError::TypeMismatch {
+            op: "-",
+            left: a.type_name(),
+            right: "",
+        }),
     }
 }
 
@@ -170,7 +188,10 @@ mod tests {
         let e = sub(&i(1), &"a".into()).unwrap_err();
         assert_eq!(e.to_string(), "não dá para usar `-` entre number e text");
         assert_eq!(add(&i(i64::MAX), &i(1)), Err(OpError::Overflow));
-        assert_eq!(div(&i(i64::MIN), &i(-1)), Ok(Value::Float(i64::MIN as f64 / -1.0)));
+        assert_eq!(
+            div(&i(i64::MIN), &i(-1)),
+            Ok(Value::Float(i64::MIN as f64 / -1.0))
+        );
     }
 
     #[test]
@@ -178,7 +199,10 @@ mod tests {
         assert!(equals(&i(1), &Value::Float(1.0)));
         assert!(!equals(&i(1), &"1".into()));
         assert_eq!(compare("<", &i(1), &i(2)), Ok(Ordering::Less));
-        assert_eq!(compare("<", &"b".into(), &"a".into()), Ok(Ordering::Greater));
+        assert_eq!(
+            compare("<", &"b".into(), &"a".into()),
+            Ok(Ordering::Greater)
+        );
         assert!(compare("<", &i(1), &"a".into()).is_err());
         assert_eq!(not(&Value::Null), Value::Bool(true));
     }

@@ -26,7 +26,15 @@ pub(crate) struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     pub(crate) fn new(src: &'a str, toks: Vec<Token>, opts: ParseOptions) -> Self {
-        Parser { src, toks, pos: 0, opts, diags: Vec::new(), depth: 0, prev_end: 0 }
+        Parser {
+            src,
+            toks,
+            pos: 0,
+            opts,
+            diags: Vec::new(),
+            depth: 0,
+            prev_end: 0,
+        }
     }
 
     pub(crate) fn into_diagnostics(self) -> Vec<Diagnostic> {
@@ -103,7 +111,11 @@ impl<'a> Parser<'a> {
     pub(crate) fn report(&mut self, d: Diagnostic) {
         // One error per position is enough; avoid cascades.
         let start = d.primary_span().map(|s| s.start);
-        if self.diags.last().is_some_and(|l| l.primary_span().map(|s| s.start) == start) {
+        if self
+            .diags
+            .last()
+            .is_some_and(|l| l.primary_span().map(|s| s.start) == start)
+        {
             return;
         }
         self.diags.push(d);
@@ -117,8 +129,11 @@ impl<'a> Parser<'a> {
     /// Generic "unexpected token" error at the current token.
     pub(crate) fn unexpected<T>(&mut self, expected: &str) -> PResult<T> {
         let t = self.peek().clone();
-        let d = Diagnostic::error(codes::E0100, format!("Esperava {expected}, mas encontrei {}", t.kind.describe()))
-            .with_label(t.span, format!("esperava {expected}"));
+        let d = Diagnostic::error(
+            codes::E0100,
+            format!("Esperava {expected}, mas encontrei {}", t.kind.describe()),
+        )
+        .with_label(t.span, format!("esperava {expected}"));
         self.fail(d)
     }
 
@@ -132,16 +147,21 @@ impl<'a> Parser<'a> {
             TokenKind::Ident(name) => {
                 let span = self.span();
                 self.fail(
-                    Diagnostic::error(codes::E0104, format!("`{name}` é uma palavra reservada e não pode ser {what}"))
-                        .with_label(span, "palavra reservada")
-                        .with_help("escolha outro nome"),
+                    Diagnostic::error(
+                        codes::E0104,
+                        format!("`{name}` é uma palavra reservada e não pode ser {what}"),
+                    )
+                    .with_label(span, "palavra reservada")
+                    .with_help("escolha outro nome"),
                 )
             }
             other => {
                 let span = self.span();
                 self.fail(
-                    Diagnostic::error(codes::E0104, format!("Faltou {what}"))
-                        .with_label(span, format!("esperava um nome, encontrei {}", other.describe())),
+                    Diagnostic::error(codes::E0104, format!("Faltou {what}")).with_label(
+                        span,
+                        format!("esperava um nome, encontrei {}", other.describe()),
+                    ),
                 )
             }
         }

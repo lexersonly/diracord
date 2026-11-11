@@ -16,7 +16,10 @@ pub struct Args {
 impl Args {
     /// Positional-only arguments.
     pub fn positional(values: Vec<Value>) -> Self {
-        Args { positional: values, named: Vec::new() }
+        Args {
+            positional: values,
+            named: Vec::new(),
+        }
     }
 
     /// Adds a named argument.
@@ -35,7 +38,12 @@ impl Args {
             let i = params.len();
             return Err(FnError::new(
                 codes::E0301,
-                format!("`{}` aceita no máximo {} argumento(s), mas recebeu {}", spec.name, params.len(), self.positional.len()),
+                format!(
+                    "`{}` aceita no máximo {} argumento(s), mas recebeu {}",
+                    spec.name,
+                    params.len(),
+                    self.positional.len()
+                ),
             )
             .at(ArgRef::Positional(i))
             .with_help(format!("uso: {}", spec.signature())));
@@ -47,8 +55,11 @@ impl Args {
         for (name, v) in self.named {
             let Some(i) = params.iter().position(|p| p.name == name) else {
                 let names: Vec<&str> = params.iter().map(|p| p.name).collect();
-                let mut err = FnError::new(codes::E0303, format!("`{}` não tem o argumento `{name}`", spec.name))
-                    .at(ArgRef::Named(name.clone()));
+                let mut err = FnError::new(
+                    codes::E0303,
+                    format!("`{}` não tem o argumento `{name}`", spec.name),
+                )
+                .at(ArgRef::Named(name.clone()));
                 if let Some(s) = diracord_diagnostics::did_you_mean(&name, names.iter().copied()) {
                     err = err.with_help(format!("você quis dizer `{s}:`?"));
                 } else {
@@ -57,18 +68,28 @@ impl Args {
                 return Err(err);
             };
             if slots[i].is_some() {
-                return Err(FnError::new(codes::E0302, format!("o argumento `{name}` foi passado duas vezes"))
-                    .at(ArgRef::Named(name)));
+                return Err(FnError::new(
+                    codes::E0302,
+                    format!("o argumento `{name}` foi passado duas vezes"),
+                )
+                .at(ArgRef::Named(name)));
             }
             slots[i] = Some(v);
         }
         for (i, p) in params.iter().enumerate() {
             if slots[i].is_none() && !p.optional {
-                return Err(FnError::new(codes::E0300, format!("faltou o argumento `{}` em `{}`", p.name, spec.name))
-                    .with_help(format!("uso: {}", spec.signature())));
+                return Err(FnError::new(
+                    codes::E0300,
+                    format!("faltou o argumento `{}` em `{}`", p.name, spec.name),
+                )
+                .with_help(format!("uso: {}", spec.signature())));
             }
         }
-        Ok(Bound { function: spec.name, names: params.iter().map(|p| (p.name, p.kind)).collect(), values: slots })
+        Ok(Bound {
+            function: spec.name,
+            names: params.iter().map(|p| (p.name, p.kind)).collect(),
+            values: slots,
+        })
     }
 }
 
@@ -122,7 +143,10 @@ impl Bound {
     pub fn number(&self, i: usize) -> Result<f64, FnError> {
         let v = self.get(i);
         match v {
-            Value::Text(s) => s.trim().parse::<f64>().map_err(|_| self.wrong(i, "um número", v)),
+            Value::Text(s) => s
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| self.wrong(i, "um número", v)),
             _ => v.as_f64().ok_or_else(|| self.wrong(i, "um número", v)),
         }
     }
@@ -148,7 +172,8 @@ impl Bound {
     /// Parameter `i` as a Discord id (object with `id`, id text or mention).
     pub fn id(&self, i: usize) -> Result<String, FnError> {
         let v = self.get(i);
-        v.entity_id().ok_or_else(|| self.wrong(i, "um usuário, canal ou cargo", v))
+        v.entity_id()
+            .ok_or_else(|| self.wrong(i, "um usuário, canal ou cargo", v))
     }
 
     /// Parameter `i` as a data scope (`user`, `server`, `member`, `global`).
@@ -170,7 +195,11 @@ impl Bound {
         let name = self.names.get(i).map(|n| n.0).unwrap_or("?");
         FnError::new(
             codes::E0302,
-            format!("o argumento `{name}` de `{}` precisa ser {expected}, mas é {}", self.function, got.type_name()),
+            format!(
+                "o argumento `{name}` de `{}` precisa ser {expected}, mas é {}",
+                self.function,
+                got.type_name()
+            ),
         )
         .at(ArgRef::Param(i))
     }
@@ -202,23 +231,37 @@ mod tests {
 
     #[test]
     fn binds_positional_and_named() {
-        let b = Args::positional(vec!["a".into()]).with_named("times", Value::Int(2)).bind(&SPEC).unwrap();
+        let b = Args::positional(vec!["a".into()])
+            .with_named("times", Value::Int(2))
+            .bind(&SPEC)
+            .unwrap();
         assert_eq!(b.text(0).unwrap(), "a");
         assert_eq!(b.int(1).unwrap(), 2);
-        assert_eq!(SPEC.invoke(Args::positional(vec![Value::Int(3)])).unwrap(), Effect::Value("3".into()));
+        assert_eq!(
+            SPEC.invoke(Args::positional(vec![Value::Int(3)])).unwrap(),
+            Effect::Value("3".into())
+        );
     }
 
     #[test]
     fn errors_have_codes() {
         let e = Args::default().bind(&SPEC).unwrap_err();
         assert_eq!(e.code, codes::E0300);
-        let e = Args::positional(vec![1i64.into(), 2i64.into(), 3i64.into()]).bind(&SPEC).unwrap_err();
+        let e = Args::positional(vec![1i64.into(), 2i64.into(), 3i64.into()])
+            .bind(&SPEC)
+            .unwrap_err();
         assert_eq!(e.code, codes::E0301);
         assert_eq!(e.arg, Some(ArgRef::Positional(2)));
-        let e = Args::positional(vec!["a".into()]).with_named("tims", 1i64.into()).bind(&SPEC).unwrap_err();
+        let e = Args::positional(vec!["a".into()])
+            .with_named("tims", 1i64.into())
+            .bind(&SPEC)
+            .unwrap_err();
         assert_eq!(e.code, codes::E0303);
         assert_eq!(e.help.as_deref(), Some("você quis dizer `times:`?"));
-        let e = Args::positional(vec!["a".into()]).with_named("text", 1i64.into()).bind(&SPEC).unwrap_err();
+        let e = Args::positional(vec!["a".into()])
+            .with_named("text", 1i64.into())
+            .bind(&SPEC)
+            .unwrap_err();
         assert_eq!(e.code, codes::E0302);
     }
 

@@ -2,7 +2,8 @@
 
 use crate::parser::{PResult, Parser};
 use diracord_ast::{
-    known, ArgType, CommandDef, EventDef, InteractionDef, InteractionKind, Item, ItemKind, Param, Program,
+    known, ArgType, CommandDef, EventDef, InteractionDef, InteractionKind, Item, ItemKind, Param,
+    Program,
 };
 use diracord_diagnostics::{codes, did_you_mean, Diagnostic, FileId, Fix, Span, Spanned};
 use diracord_lexer::{StrPart, TokenKind};
@@ -14,10 +15,13 @@ impl Parser<'_> {
             if self.at(&TokenKind::RBrace) {
                 let span = self.span();
                 self.report(
-                    Diagnostic::error(codes::E0100, "Essa chave `}` fecha um bloco que não foi aberto")
-                        .with_label(span, "chave a mais")
-                        .with_help("apague essa chave ou confira se falta um `{` antes")
-                        .with_fix(Fix::replace("apagar a chave", span, "", false)),
+                    Diagnostic::error(
+                        codes::E0100,
+                        "Essa chave `}` fecha um bloco que não foi aberto",
+                    )
+                    .with_label(span, "chave a mais")
+                    .with_help("apague essa chave ou confira se falta um `{` antes")
+                    .with_fix(Fix::replace("apagar a chave", span, "", false)),
                 );
                 self.bump();
                 continue;
@@ -33,7 +37,10 @@ impl Parser<'_> {
                 }
             }
         }
-        Program { items, span: Span::new(0, self.src.len() as u32) }
+        Program {
+            items,
+            span: Span::new(0, self.src.len() as u32),
+        }
     }
 
     fn item(&mut self) -> PResult<Item> {
@@ -54,7 +61,11 @@ impl Parser<'_> {
         } else {
             return self.loose_code();
         };
-        Ok(Item { kind, span: start.to(Span::point(self.prev_end())), file: FileId::default() })
+        Ok(Item {
+            kind,
+            span: start.to(Span::point(self.prev_end())),
+            file: FileId::default(),
+        })
     }
 
     fn loose_code<T>(&mut self) -> PResult<T> {
@@ -64,7 +75,9 @@ impl Parser<'_> {
             .with_help("coloque dentro de um comando: command(\"nome\") { ... }, ou de um evento: memberJoin { ... }");
         if let TokenKind::Ident(s) = self.kind() {
             if s == "fn" || s == "function" {
-                d = d.with_note("funções próprias (`fn`) ainda não existem: a sintaxe está em aberto na SPEC");
+                d = d.with_note(
+                    "funções próprias (`fn`) ainda não existem: a sintaxe está em aberto na SPEC",
+                );
             } else if let Some(sugg) = did_you_mean(s, ["command", "button", "menu", "modal"]) {
                 d = d.with_help(format!("você quis dizer `{sugg}`?"));
             }
@@ -97,9 +110,12 @@ impl Parser<'_> {
         };
         if name.node.trim().is_empty() || name.node.contains(char::is_whitespace) {
             self.report(
-                Diagnostic::error(codes::E0109, "O nome do comando não pode ter espaços nem ser vazio")
-                    .with_label(name.span, "nome inválido")
-                    .with_help("use uma palavra só, como \"ping\" ou \"user-info\""),
+                Diagnostic::error(
+                    codes::E0109,
+                    "O nome do comando não pode ter espaços nem ser vazio",
+                )
+                .with_label(name.span, "nome inválido")
+                .with_help("use uma palavra só, como \"ping\" ou \"user-info\""),
             );
         }
         let mut params: Vec<Param> = Vec::new();
@@ -110,9 +126,12 @@ impl Parser<'_> {
             let p = self.param()?;
             if let Some(prev) = params.iter().find(|q| q.name.name == p.name.name) {
                 self.report(
-                    Diagnostic::error(codes::E0116, format!("O argumento `{}` aparece duas vezes", p.name.name))
-                        .with_label(p.name.span, "nome repetido")
-                        .with_secondary(prev.name.span, "primeira vez aqui"),
+                    Diagnostic::error(
+                        codes::E0116,
+                        format!("O argumento `{}` aparece duas vezes", p.name.name),
+                    )
+                    .with_label(p.name.span, "nome repetido")
+                    .with_secondary(prev.name.span, "primeira vez aqui"),
                 );
             }
             if p.default.is_none() {
@@ -120,7 +139,10 @@ impl Parser<'_> {
                     self.report(
                         Diagnostic::error(
                             codes::E0112,
-                            format!("O argumento obrigatório `{}` está depois de um opcional", p.name.name),
+                            format!(
+                                "O argumento obrigatório `{}` está depois de um opcional",
+                                p.name.name
+                            ),
                         )
                         .with_label(p.span, "obrigatório")
                         .with_secondary(opt.span, "opcional antes dele")
@@ -140,15 +162,25 @@ impl Parser<'_> {
         if !self.eat(&TokenKind::Colon) {
             let span = self.span();
             return self.fail(
-                Diagnostic::error(codes::E0100, format!("Faltou o tipo do argumento `{}`", name.name))
-                    .with_label(span, "esperava `:` e o tipo")
-                    .with_help(format!("exemplo: {}: text", name.name))
-                    .with_fix(Fix::replace("adicionar `: text`", Span::point(name.span.end), ": text", false)),
+                Diagnostic::error(
+                    codes::E0100,
+                    format!("Faltou o tipo do argumento `{}`", name.name),
+                )
+                .with_label(span, "esperava `:` e o tipo")
+                .with_help(format!("exemplo: {}: text", name.name))
+                .with_fix(Fix::replace(
+                    "adicionar `: text`",
+                    Span::point(name.span.end),
+                    ": text",
+                    false,
+                )),
             );
         }
         let ty_tok = self.peek().clone();
         let TokenKind::Ident(ty_name) = &ty_tok.kind else {
-            return self.unexpected("o tipo do argumento (text, number, bool, member, user, channel, role)");
+            return self.unexpected(
+                "o tipo do argumento (text, number, bool, member, user, channel, role)",
+            );
         };
         self.bump();
         let ty = match ArgType::from_name(ty_name) {
@@ -161,22 +193,40 @@ impl Parser<'_> {
                     _ => None,
                 };
                 let names = ArgType::ALL.map(ArgType::as_str);
-                let mut d = Diagnostic::error(codes::E0107, format!("`{ty_name}` não é um tipo de argumento"))
-                    .with_label(ty_tok.span, "tipo desconhecido")
-                    .with_note("tipos: text, number, bool, member, user, channel, role");
-                let guess = alias.or_else(|| did_you_mean(ty_name, names).and_then(ArgType::from_name));
+                let mut d = Diagnostic::error(
+                    codes::E0107,
+                    format!("`{ty_name}` não é um tipo de argumento"),
+                )
+                .with_label(ty_tok.span, "tipo desconhecido")
+                .with_note("tipos: text, number, bool, member, user, channel, role");
+                let guess =
+                    alias.or_else(|| did_you_mean(ty_name, names).and_then(ArgType::from_name));
                 if let Some(g) = guess {
                     d = d
                         .with_help(format!("você quis dizer `{g}`?"))
-                        .with_fix(Fix::replace(format!("trocar por `{g}`"), ty_tok.span, g.as_str(), alias.is_some()));
+                        .with_fix(Fix::replace(
+                            format!("trocar por `{g}`"),
+                            ty_tok.span,
+                            g.as_str(),
+                            alias.is_some(),
+                        ));
                 }
                 self.report(d);
                 guess.unwrap_or(ArgType::Text)
             }
         };
-        let default = if self.eat(&TokenKind::Assign) { Some(self.expr(true)?) } else { None };
+        let default = if self.eat(&TokenKind::Assign) {
+            Some(self.expr(true)?)
+        } else {
+            None
+        };
         let span = name.span.to(Span::point(self.prev_end()));
-        Ok(Param { name, ty: Spanned::new(ty, ty_tok.span), default, span })
+        Ok(Param {
+            name,
+            ty: Spanned::new(ty, ty_tok.span),
+            default,
+            span,
+        })
     }
 
     fn interaction(&mut self, kind: InteractionKind) -> PResult<InteractionDef> {
@@ -185,9 +235,15 @@ impl Parser<'_> {
         let Some(id) = self.plain_string() else {
             let span = self.span();
             return self.fail(
-                Diagnostic::error(codes::E0109, format!("O {} precisa de um id em texto", kind.as_str()))
-                    .with_label(span, "esperava o id entre aspas")
-                    .with_help(format!("exemplo: {}(\"confirmar\") {{ reply \"ok\" }}", kind.as_str())),
+                Diagnostic::error(
+                    codes::E0109,
+                    format!("O {} precisa de um id em texto", kind.as_str()),
+                )
+                .with_label(span, "esperava o id entre aspas")
+                .with_help(format!(
+                    "exemplo: {}(\"confirmar\") {{ reply \"ok\" }}",
+                    kind.as_str()
+                )),
             );
         };
         self.close_paren(open)?;
@@ -201,7 +257,11 @@ impl Parser<'_> {
             return Ok(());
         }
         let t = self.peek().clone();
-        let at_end = t.newline_before || matches!(t.kind, TokenKind::LBrace | TokenKind::RBrace | TokenKind::Eof);
+        let at_end = t.newline_before
+            || matches!(
+                t.kind,
+                TokenKind::LBrace | TokenKind::RBrace | TokenKind::Eof
+            );
         if at_end {
             let here = Span::point(self.prev_end());
             self.fail(
@@ -211,10 +271,13 @@ impl Parser<'_> {
                     .with_fix(Fix::replace("fechar o parêntese", here, ")", false)),
             )
         } else {
-            let d = Diagnostic::error(codes::E0100, format!("Esperava `,` ou `)`, mas encontrei {}", t.kind.describe()))
-                .with_label(t.span, "esperava `,` ou `)`")
-                .with_secondary(open, "parêntese aberto aqui")
-                .with_help("separe os argumentos com vírgula");
+            let d = Diagnostic::error(
+                codes::E0100,
+                format!("Esperava `,` ou `)`, mas encontrei {}", t.kind.describe()),
+            )
+            .with_label(t.span, "esperava `,` ou `)`")
+            .with_secondary(open, "parêntese aberto aqui")
+            .with_help("separe os argumentos com vírgula");
             self.fail(d)
         }
     }
