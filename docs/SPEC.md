@@ -114,7 +114,7 @@ testing { ban user } catch err { reply "Falhou: $err" }
 ```
 fn greet(name: text) { return "Oi $name" }
 ```
-**[ABERTO]** sintaxe exata e se aceita tipos.
+**[ABERTO]** sintaxe exata e se aceita tipos. Três propostas em `docs/rfcs/functions.md`.
 
 ### 4.8 Atalho estilo aoi.js
 `$ban[user;reason]` equivale a `ban(user, reason)`. Fica **desligado/ligado por
@@ -172,4 +172,4 @@ disco). Versão `1` no cabeçalho; arquivos `v0` são atualizados ao abrir.
 Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 
 ## 10. Decisões em aberto (resumo)
-- Sintaxe das funções próprias.
+- Sintaxe das funções próprias (`docs/rfcs/functions.md`).
