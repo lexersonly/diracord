@@ -164,93 +164,73 @@ command("perfil") {
 
 ## Components v2
 
-O layout novo do Discord (caixas, textos, imagens, botões e menus) é escrito em blocos,
-aberto pela palavra `layout`:
+O layout novo do Discord (caixas, textos, imagens, botões e menus) é montado com
+**peças**, no estilo do `ContainerBuilder` do discord.js: cada peça é uma função, e você
+coloca uma dentro da outra.
 
 ```dcs
-command("regras") {
-  reply layout {
-    container(color: "purple") {
-      text "## Bem-vindo, $user.name"
-      section {
-        text "Leia as regras antes de continuar."
-        thumbnail "https://cdn.discordapp.com/embed/avatars/0.png"
-      }
-      separator(spacing: "large")
-      row {
-        button("aceitar", "Aceito", style: "success")
-        button("recusar", "Não aceito", style: "danger")
-      }
-    }
-  }
+command("rules") {
+  reply container(
+    text("## Welcome, $user.name"),
+    section("Read the rules before you continue.", thumbnail: user.avatar),
+    separator(spacing: "large"),
+    row(
+      button("accept", "Accept", style: "success"),
+      button("decline", "Decline", style: "danger")
+    ),
+    color: "purple"
+  )
 }
 
-button("aceitar") {
-  addRole user "Membro"
-  reply "Bem-vindo!" ephemeral: true
+button("accept") {
+  addRole user "Member"
+  reply "Welcome!" ephemeral: true
 }
 
-button("recusar") {
-  reply "Tudo bem." ephemeral: true
+button("decline") {
+  reply "No problem." ephemeral: true
 }
 ```
 
-Dentro do layout valem `local`, `if` e `for`:
+As peças são valores: dá para guardar em variáveis, montar com `if`/`for` e mandar
+uma lista inteira:
 
 ```dcs
-command("cores") {
-  local cores = ["Azul", "Verde", "Roxo"]
-  reply layout {
-    text "Escolha uma cor:"
-    row {
-      menu("cor", cores, placeholder: "Clique aqui")
-    }
-    if len(cores) > 2 {
-      local n = len(cores)
-      separator
-      text "-# são $n opções"
-    }
+command("colors") {
+  local colors = ["Blue", "Green", "Purple"]
+  local parts = [text("Pick a color:"), row(menu("color", colors, placeholder: "Click here"))]
+  if len(colors) > 2 {
+    parts = push(parts, text("-# there are " + len(colors) + " options"))
   }
+  reply parts
 }
 
-menu("cor") {
-  reply "Você escolheu " + join(message.values) ephemeral: true
+menu("color") {
+  reply "You picked " + join(message.values) ephemeral: true
 }
 ```
 
-| componente | onde | argumentos |
+| peça | vai onde | argumentos |
 |---|---|---|
-| `container { }` | topo | `color?`, `spoiler?` |
-| `section { }` | topo ou container | 1–3 `text` + um `thumbnail` ou `button` |
-| `row { }` | topo ou container | até 5 `button`, ou um `menu` |
-| `text` | topo, container, section | `content` (markdown) |
-| `thumbnail` | section | `url`, `description?`, `spoiler?` |
-| `separator` | topo ou container | `spacing?` ("small"/"large"), `line?` |
-| `gallery` | topo ou container | `items` (1–10 urls) |
-| `file` | topo ou container | `url` ("attachment://..."), `spoiler?` |
-| `button` | row ou section | `id?`, `label?`, `style?`, `emoji?`, `disabled?`, `url?` |
-| `menu` | row | `id`, `options`, `placeholder?`, `min?`, `max?` |
+| `container(peças..., color?, spoiler?)` | na mensagem | text, section, row, separator, gallery, file |
+| `text(content)` | mensagem ou container | markdown |
+| `section(textos..., thumbnail:, button:)` | mensagem ou container | 1–3 textos + **um** `thumbnail:` ou `button:` |
+| `row(peças...)` | mensagem ou container | até 5 `button(...)`, ou um `menu(...)` |
+| `button(id, label, style?, emoji?, disabled?, url?)` | `row` ou `section(button:)` | style: primary, secondary, success, danger |
+| `menu(id, options, placeholder?, min?, max?)` | `row` | options: textos ou `{ label, value }` |
+| `thumbnail(url, description?, spoiler?)` | `section(thumbnail:)` | ou passe só a url |
+| `separator(spacing?, line?)` | mensagem ou container | spacing: "small" / "large" |
+| `gallery(urls...)` | mensagem ou container | 1 a 10 imagens |
+| `file(url, spoiler?)` | mensagem ou container | "attachment://nome" |
 
-Componentes sem bloco aceitam opções pelo nome: `separator(spacing: "large", line: false)`.
-Com `url:` o botão é um link: `button(label: "Site", url: "https://...")`.
+Dicas:
 
-A mesma mensagem também pode ser escrita como objeto (útil para montar por código):
-
-```dcs
-command("oi") {
-  reply {
-    layout: [
-      { container: [
-          { text: "## Oi" },
-          { row: [{ button: "aceitar", label: "Aceito", style: "success" }] }
-        ], color: "purple" }
-    ]
-  }
-}
-```
-
-Erros comuns: botão fora de `row` (E0117), `section` sem acessório, nome errado
-(`txet` → `text`, E0118). Tudo é conferido pelo `check` e antes de enviar.
+- `reply` aceita **uma peça**, **uma lista de peças** ou o objeto `{ layout: [...] }`.
+- Botão de link: `button(label: "Website", url: "https://...")` (sem id).
+- O clique do botão roda o `button("id") { }` com o mesmo id, escrito no topo do arquivo.
+- Se uma peça estiver no lugar errado, a seta aponta para ela:
+  `button(...)` dentro de `container(...)` → "vai dentro de `row(...)`" (E0117).
+- Layout não se mistura com texto ou embed na mesma mensagem: para texto, use `text(...)`.
 
 ## Dados salvos
 

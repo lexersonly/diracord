@@ -24,6 +24,8 @@ pub enum Category {
     Lists,
     /// Anything else (`typeOf`, `now`).
     Utility,
+    /// Components v2 pieces (`container`, `text`, `row`, `button`...).
+    Components,
 }
 
 impl Category {
@@ -39,6 +41,7 @@ impl Category {
             Category::Math => "math",
             Category::Lists => "lists",
             Category::Utility => "utility",
+            Category::Components => "components",
         }
     }
 }
@@ -74,6 +77,8 @@ pub enum ParamKind {
     Role,
     /// A data scope keyword: `user`, `server`, `member`, `global`.
     Scope,
+    /// A Components v2 piece (`text(...)`, `row(...)`...).
+    Component,
 }
 
 impl ParamKind {
@@ -91,6 +96,7 @@ impl ParamKind {
             ParamKind::Channel => "channel",
             ParamKind::Role => "role",
             ParamKind::Scope => "scope",
+            ParamKind::Component => "component",
         }
     }
 }
@@ -106,6 +112,10 @@ pub struct ParamSpec {
     pub optional: bool,
     /// Short description (Portuguese).
     pub doc: &'static str,
+    /// Takes every remaining positional argument as a list (`container(a, b, c)`).
+    /// Only the last positional parameter can be variadic; parameters after it
+    /// are passed by name only.
+    pub variadic: bool,
 }
 
 impl ParamSpec {
@@ -116,6 +126,7 @@ impl ParamSpec {
             kind,
             optional: false,
             doc,
+            variadic: false,
         }
     }
 
@@ -126,6 +137,18 @@ impl ParamSpec {
             kind,
             optional: true,
             doc,
+            variadic: false,
+        }
+    }
+
+    /// A variadic parameter: one or more positional values, received as a list.
+    pub const fn rest(name: &'static str, kind: ParamKind, doc: &'static str) -> Self {
+        ParamSpec {
+            name,
+            kind,
+            optional: false,
+            doc,
+            variadic: true,
         }
     }
 }
@@ -162,12 +185,14 @@ impl FunctionSpec {
             .params
             .iter()
             .map(|p| {
-                format!(
-                    "{}{}: {}",
-                    p.name,
-                    if p.optional { "?" } else { "" },
-                    p.kind.as_str()
-                )
+                let mark = if p.variadic {
+                    "..."
+                } else if p.optional {
+                    "?"
+                } else {
+                    ""
+                };
+                format!("{}{mark}: {}", p.name, p.kind.as_str())
             })
             .collect();
         format!("{}({})", self.name, params.join(", "))

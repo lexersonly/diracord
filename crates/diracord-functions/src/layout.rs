@@ -1,4 +1,7 @@
-//! Validation of Components v2 layouts in their object form (the "B" form):
+//! Components v2: the object form every layout ends up in, its validation, and
+//! helpers for the pieces (`container(...)`, `row(...)`...).
+//!
+//! The object form:
 //!
 //! ```text
 //! { layout: [
@@ -8,8 +11,8 @@
 //! ] }
 //! ```
 //!
-//! `layout { ... }` blocks (the "A" form) evaluate to exactly this shape, so
-//! both forms are checked here, once, before anything goes to Discord.
+//! The pieces (`container(text("## Oi"), row(button("ok", "Ok")))`) build
+//! exactly this shape, so everything is checked here before going to Discord.
 
 use diracord_value::{Map, Value};
 use std::fmt;
@@ -47,6 +50,67 @@ const BUTTON_STYLES: [&str; 5] = ["primary", "secondary", "success", "danger", "
 /// `true` when a message object uses Components v2 (`{ layout: ... }`).
 pub fn is_layout(v: &Value) -> bool {
     v.field("layout").is_some()
+}
+
+/// Every piece kind, top-level kinds first.
+pub const KINDS: [&str; 10] = [
+    "container",
+    "section",
+    "row",
+    "text",
+    "separator",
+    "gallery",
+    "file",
+    "button",
+    "menu",
+    "thumbnail",
+];
+
+/// Which piece a value is (`"row"`, `"button"`...), or `None` for anything else.
+pub fn kind_of(v: &Value) -> Option<&'static str> {
+    let Value::Object(m) = v else { return None };
+    KINDS.iter().copied().find(|k| m.contains_key(*k))
+}
+
+/// Can a `child` piece go directly inside `parent` (`None` = the message itself)?
+pub fn allowed_in(child: &str, parent: Option<&str>) -> bool {
+    match parent {
+        None => TOP_TYPES.contains(&child),
+        Some("container") => matches!(
+            child,
+            "section" | "row" | "text" | "separator" | "gallery" | "file"
+        ),
+        Some("row") => matches!(child, "button" | "menu"),
+        Some(_) => false,
+    }
+}
+
+/// Where a piece may go, in words.
+pub fn placement_hint(kind: &str) -> &'static str {
+    match kind {
+        "button" => "dentro de `row(...)` (ou como `button:` de uma `section(...)`)",
+        "menu" => "dentro de `row(...)`",
+        "thumbnail" => "como `thumbnail:` de uma `section(...)`",
+        "container" => "direto na mensagem (não dentro de outro container)",
+        _ => "direto na mensagem ou dentro de `container(...)`",
+    }
+}
+
+/// Turns what was given to `reply`/`send` into a `{ layout: [...] }` message when
+/// it is a piece, a list of pieces, or already a layout. Other values → `None`.
+pub fn as_message(v: &Value) -> Option<Value> {
+    if is_layout(v) {
+        return Some(v.clone());
+    }
+    match v {
+        Value::Object(_) if kind_of(v).is_some() => {
+            Some(Value::object([("layout", Value::List(vec![v.clone()]))]))
+        }
+        Value::List(l) if !l.is_empty() && l.iter().all(|x| kind_of(x).is_some()) => {
+            Some(Value::object([("layout", v.clone())]))
+        }
+        _ => None,
+    }
 }
 
 /// Checks a whole message object `{ layout: [...] }`.

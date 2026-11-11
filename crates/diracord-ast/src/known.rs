@@ -7,9 +7,8 @@
 ///
 /// `try` is reserved only so that `try { }` gets a clear "use `testing`" error.
 pub const KEYWORDS: &[&str] = &[
-    "command", "button", "menu", "modal", "local", "if", "else", "for", "in", "while", "chain",
-    "testing", "try", "catch", "return", "stop", "break", "continue", "true", "false", "null",
-    "and", "or", "not",
+    "command", "local", "if", "else", "for", "in", "while", "chain", "testing", "try", "catch",
+    "return", "stop", "break", "continue", "true", "false", "null", "and", "or", "not",
 ];
 
 /// An event the bot can listen to: `memberJoin { ... }`.

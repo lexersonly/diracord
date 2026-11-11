@@ -96,18 +96,15 @@ testing { ban user } catch err { reply "Falhou: $err" }
 
 ### 4.6 Respostas, embeds e Components v2
 - Embed como objeto estilo JSON: `reply { title: "Oi", color: "red" }`.
-- Components v2 (decidido em 2026-11-11, ver `docs/rfcs/components-v2.md`): layout em
-  **blocos** aberto pela palavra `layout` (proposta A), com `if`/`for`/`local` dentro, e a
-  forma **objeto** `{ layout: [...] }` (proposta B) aceita também. As duas geram a mesma árvore.
-  Componentes sem bloco aceitam opções nomeadas: `separator(spacing: "large")`.
+- Components v2 (decidido em 2026-11-11, revisto no mesmo dia, ver `docs/rfcs/components-v2.md`):
+  **peças no estilo do discord.js**, cada uma é uma função que devolve um valor e você
+  coloca uma dentro da outra. A forma objeto `{ layout: [...] }` também é aceita.
   ```
-  reply layout {
-    container(color: "purple") {
-      text "## Bem-vindo, $user.name"
-      separator
-      row { button("aceitar", "Aceito", style: "success") }
-    }
-  }
+  reply container(
+    text("## Welcome, $user.name"),
+    row(button("accept", "Accept", style: "success")),
+    color: "purple"
+  )
   ```
 
 ### 4.7 Funções próprias

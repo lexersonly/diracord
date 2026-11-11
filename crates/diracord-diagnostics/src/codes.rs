@@ -134,11 +134,8 @@ codes! {
     E0116 = 116, "nome repetido",
         "Já existe outro comando ou interação com esse nome. Renomeie um deles.";
     /// A layout component in a place where Discord does not allow it.
-    E0117 = 117, "componente fora do lugar",
-        "Esse componente não pode ficar aí. Botões e menus vão em `row`; `thumbnail` vai em `section`; `container` só no topo do layout.";
-    /// An unknown name inside `layout { }`.
-    E0118 = 118, "componente desconhecido",
-        "Dentro de `layout { }` valem: container, section, row, text, thumbnail, separator, gallery, file, button, menu, além de local, if e for.";
+    E0117 = 117, "peça do layout fora do lugar",
+        "Essa peça do Components v2 não pode ficar aí. Botões e menus vão dentro de `row(...)`; `thumbnail` vai em `section(...)`; `container(...)` não vai dentro de outro container.";
 
     // ---- runtime ----
     /// A variable that does not exist.

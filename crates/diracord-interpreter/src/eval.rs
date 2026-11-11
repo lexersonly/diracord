@@ -100,7 +100,6 @@ impl<'r> Machine<'r> {
                     let i = self.eval(index).await?;
                     index_value(v, &i, e.span)
                 }
-                ExprKind::Layout(l) => self.eval_layout(l).await,
                 ExprKind::Call { callee, args, .. } => {
                     let Some(id) = callee.as_ident() else {
                         return Err(RuntimeError::new(
@@ -204,7 +203,10 @@ impl<'r> Machine<'r> {
         for a in args {
             let param = match &a.name {
                 Some(n) => spec.params.iter().find(|p| p.name == n.name),
-                None => spec.params.get(raw.positional.len()),
+                None => spec
+                    .params
+                    .get(raw.positional.len())
+                    .or_else(|| spec.params.iter().find(|p| p.variadic)),
             };
             // `scope: user` means the scope keyword, not the `user` variable.
             let v = match (param, a.value.as_ident()) {

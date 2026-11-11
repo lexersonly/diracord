@@ -34,7 +34,9 @@ impl Args {
     /// twice (`E0302`), a required one missing (`E0300`).
     pub fn bind(self, spec: &FunctionSpec) -> Result<Bound, FnError> {
         let params = spec.params;
-        if self.positional.len() > params.len() {
+        let rest_at = params.iter().position(|p| p.variadic);
+        let fixed = rest_at.unwrap_or(params.len());
+        if rest_at.is_none() && self.positional.len() > params.len() {
             let i = params.len();
             return Err(FnError::new(
                 codes::E0301,
@@ -49,8 +51,18 @@ impl Args {
             .with_help(format!("uso: {}", spec.signature())));
         }
         let mut slots: Vec<Option<Value>> = vec![None; params.len()];
+        let mut rest = Vec::new();
         for (i, v) in self.positional.into_iter().enumerate() {
-            slots[i] = Some(v);
+            if i < fixed {
+                slots[i] = Some(v);
+            } else {
+                rest.push(v);
+            }
+        }
+        if let Some(r) = rest_at {
+            if !rest.is_empty() {
+                slots[r] = Some(Value::List(rest));
+            }
         }
         for (name, v) in self.named {
             let Some(i) = params.iter().position(|p| p.name == name) else {

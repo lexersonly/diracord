@@ -93,20 +93,11 @@ postfix     = primary { "." NAME | "[" expr "]" | "(" [ arg { "," arg } [ "," ] 
               (* "[" de índice vem colado: lista[0]. "(" na mesma linha. *)
 primary     = NUMBER | STRING | "true" | "false" | "null" | NAME
             | "(" expr ")" | "[" [ expr { "," expr } [","] ] "]"
-            | object | dollar_call | layout ;
+            | object | dollar_call ;
 object      = "{" { ( NAME | STRING ) ":" expr ( "," | NEWLINE ) } "}" ;
 arg         = [ NAME ":" ] expr ;                      (* argumento nomeado: scope: user *)
 dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] dollar = true *)
 
-(* Components v2. "layout" só é especial quando vem colado a "{"; continua podendo ser nome de variável. *)
-layout      = "layout" lblock ;
-lblock      = "{" { litem ( NEWLINE | ";" ) } "}" ;
-litem       = "local" NAME "=" value
-            | "if" cond lblock { "else" "if" cond lblock } [ "else" lblock ]
-            | "for" NAME "in" cond lblock
-            | element ;
-element     = ELEMENT ( "(" [ arg { "," arg } ] ")" | { arg [ "," ] } ) [ lblock ] ;
-              (* lblock só em container, section e row *)
 ```
 
 ## 4. Regras de significado
@@ -139,45 +130,32 @@ element     = ELEMENT ( "(" [ arg { "," arg } ] ")" | { arg [ "," ] } ) [ lblock
   "#rrggbb" ou número.
 - Menções: o bot só menciona usuários (nunca @everyone/@here/cargos).
 
-## 4.1 Components v2 (layout)
+## 4.1 Components v2
 
-Duas formas, que geram a mesma coisa. Forma A (blocos), recomendada:
+Peças no estilo do discord.js: cada peça é uma função que devolve um valor, e uma vai
+dentro da outra. `reply`/`send` aceitam uma peça, uma lista de peças ou `{ layout: [...] }`.
 ```dcs
-command("regras") {
-  reply layout {
-    container(color: "purple") {
-      text "## Bem-vindo, $user.name"
-      section {
-        text "Leia as regras."
-        thumbnail "https://cdn.discordapp.com/embed/avatars/0.png"
-      }
-      separator(spacing: "large")
-      row {
-        button("aceitar", "Aceito", style: "success")
-        button(label: "Site", url: "https://exemplo.com")
-      }
-    }
-  }
+command("rules") {
+  reply container(
+    text("## Welcome, $user.name"),
+    section("Read the rules.", thumbnail: user.avatar),
+    separator(spacing: "large"),
+    row(button("accept", "Accept", style: "success"), button(label: "Website", url: "https://example.com")),
+    color: "purple"
+  )
 }
 ```
-Forma B (objeto), útil para gerar por código:
-`reply { layout: [ { container: [ { text: "## Oi" }, { row: [ { button: "ok", label: "Ok" } ] } ], color: "purple" } ] }`
-
-Componentes (argumentos na ordem; todos também por nome; `?` = opcional):
-- `container(color?, spoiler?) { ... }` — só no topo. Dentro: section, row, text, separator, gallery, file.
-- `section { ... }` — 1 a 3 `text` + exatamente um acessório: `thumbnail` ou `button`.
-- `row { ... }` — até 5 `button`, OU um `menu` sozinho.
-- `text content` — markdown, até 4000 letras.
-- `thumbnail url description? spoiler?` — só dentro de section.
-- `separator(spacing?, line?)` — spacing "small" | "large"; line true/false.
-- `gallery items` — lista de 1 a 10 urls (ou { url, description, spoiler }).
-- `file url spoiler?` — url "attachment://nome".
-- `button(id?, label?, style?, emoji?, disabled?, url?)` — style: primary secondary success danger link.
-  Com `url:` é botão de link e não tem id. Sem url, o id liga ao `button("id") { ... }` do topo do arquivo.
-- `menu(id, options, placeholder?, min?, max?)` — options: lista de textos ou { label, value, description }.
-  O clique roda `menu("id") { ... }`; os escolhidos ficam em `message.values`.
-Dentro do layout também valem `local`, `if` e `for`. Não valem reply/send/while/chain/testing.
-Limites do Discord: 40 componentes por mensagem. Layout não se mistura com embed nem com texto solto.
+Onde cada peça pode ficar:
+- Na mensagem: container, section, row, text, separator, gallery, file.
+- Dentro de container(...): section, row, text, separator, gallery, file (NÃO container, NÃO button/menu soltos).
+- section(textos..., thumbnail: X ou button: Y): 1 a 3 textos e exatamente UM acessório.
+- row(...): até 5 button(...), OU um menu(...) sozinho.
+- button(id, label, ...) só em row(...) ou em section(button: ...). Com url: é link e não tem id.
+- O clique de button("id") / menu("id") roda o handler `button("id") { }` / `menu("id") { }` do topo do arquivo;
+  em menus, os escolhidos ficam em `message.values`.
+Layout não se mistura com texto ou embed: para texto, use text(...). Máximo 40 peças por mensagem.
+A forma objeto (para gerar por código) é equivalente:
+`reply { layout: [ { container: [ { text: "## Hi" }, { row: [ { button: "ok", label: "Ok" } ] } ], color: "purple" } ] }`
 
 ## 5. Variáveis automáticas
 
@@ -277,6 +255,17 @@ typeOf(value: any) -> text : Nome do tipo de um valor: null, bool, number, text,
 toNumber(value: any) -> number : Converte texto em número. Devolve null se não for número.
 toText(value: any) -> text : Converte qualquer valor em texto.
 now() -> number : Hora atual em milissegundos desde 1970 (Unix).
+[components]
+container(items...: component, color?: text, spoiler?: bool) -> component : Caixa com cor de destaque que agrupa outras peças.
+text(content: text) -> component : Texto (com markdown) dentro do layout.
+section(texts...: text, thumbnail?: any, button?: component) -> component : 1 a 3 textos com uma imagem pequena (thumbnail) ou um botão ao lado.
+thumbnail(url: text, description?: text, spoiler?: bool) -> component : Imagem pequena ao lado de uma section (use em thumbnail: quando precisar de opções).
+separator(spacing?: text, line?: bool) -> component : Espaço ou linha entre peças.
+gallery(images...: any) -> component : De 1 a 10 imagens grandes.
+file(url: text, spoiler?: bool) -> component : Mostra um arquivo enviado junto (attachment://nome).
+row(items...: component) -> component : Uma linha com até 5 botões, ou com um menu.
+button(id?: text, label?: text, style?: text, emoji?: text, disabled?: bool, url?: text) -> component : Um botão. O clique roda o button("id") { } com o mesmo id; com url, vira link.
+menu(id: text, options: list, placeholder?: text, min?: number, max?: number) -> component : Menu de opções. A escolha roda o menu("id") { }; os valores ficam em message.values.
 ```
 
 ## 10. Códigos de erro
@@ -306,8 +295,7 @@ E0113 evento desconhecido
 E0114 código solto
 E0115 break/continue fora de laço
 E0116 nome repetido
-E0117 componente fora do lugar
-E0118 componente desconhecido
+E0117 peça do layout fora do lugar
 E0200 variável não existe
 E0201 função não existe
 E0202 tipo errado
@@ -359,10 +347,10 @@ E0504 motor não encontrado
 - `break` fora de for/while → `stop` (E0115)
 - `get("x", scope: guild)` → `scope: server` (E0401)
 - `guild.name` / `$guild.name` / `scope: guild` → `server` (E0200/E0401, corrigido por --fix)
-- `reply layout { button("a", "A") }` → botão precisa de `row { ... }` (E0117)
-- `section { text "a" }` sem acessório → adicione `thumbnail url` ou `button(...)`
-- `row { button("a", "A") { reply "x" } }` → o clique fica fora: `button("a") { reply "x" }` no topo (E0100)
-- `reply layout { txet "a" }` → `text "a"` (E0118, com sugestão)
+- `reply container(button("a", "A"))` → `reply container(row(button("a", "A")))` (E0117, seta no botão)
+- `section("a")` sem acessório → `section("a", thumbnail: url)` ou `section("a", button: button("b", "B"))`
+- `container("texto solto")` → `container(text("texto solto"))`
+- `reply "Oi", row(...)` → `reply [text("Oi"), row(...)]` (layout não mistura com texto solto)
 - Ids grandes como número (`123456789012345678901`) → use texto `"123..."` (E0003)
 
 ## 12. Exemplos

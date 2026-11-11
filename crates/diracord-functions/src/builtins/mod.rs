@@ -5,6 +5,7 @@
 //! list it in [`all`].
 
 pub mod common;
+pub mod components;
 pub mod data;
 pub mod lists;
 pub mod lookup;
@@ -64,5 +65,15 @@ pub fn all() -> &'static [&'static FunctionSpec] {
         &utility::to_number::SPEC,
         &utility::to_text::SPEC,
         &utility::now::SPEC,
+        &components::container::SPEC,
+        &components::text::SPEC,
+        &components::section::SPEC,
+        &components::thumbnail::SPEC,
+        &components::separator::SPEC,
+        &components::gallery::SPEC,
+        &components::file::SPEC,
+        &components::row::SPEC,
+        &components::button::SPEC,
+        &components::menu::SPEC,
     ]
 }

@@ -253,10 +253,10 @@ test("components v2: layout object → Discord components", () => {
   ]);
 });
 
-test("components v2 end to end: layout block → engine → REST body", async () => {
+test("components v2 end to end: pieces → engine → REST body", async () => {
   const engine = await EngineClient.start();
   try {
-    const src = 'command("menu") {\n  reply layout {\n    text "Escolha:"\n    row {\n      button("a", "A")\n      button("b", "B", style: "danger")\n    }\n  }\n}\nbutton("a") { reply "A!" }';
+    const src = 'command("menu") {\n  reply [text("Pick one:"), row(button("a", "A"), button("b", "B", style: "danger"))]\n}\nbutton("a") { reply "A!" }';
     const loaded = await engine.load([{ path: "m.dcs", source: src }]);
     assert.equal(loaded.ok, true, loaded.rendered);
     const { fetch, calls } = fakeFetch(() => ({ body: { id: "m2", channel_id: "c1" } }));
@@ -268,7 +268,7 @@ test("components v2 end to end: layout block → engine → REST body", async ()
     const body = calls[0]?.body as Record<string, unknown>;
     assert.equal(body["flags"], 1 << 15);
     assert.deepEqual(body["components"], [
-      { type: 10, content: "Escolha:" },
+      { type: 10, content: "Pick one:" },
       {
         type: 1,
         components: [

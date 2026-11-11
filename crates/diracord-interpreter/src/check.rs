@@ -285,54 +285,7 @@ impl Checker<'_> {
                 self.expr(index);
             }
             ExprKind::Call { callee, args, .. } => self.call(callee, args, e.span),
-            ExprKind::Layout(l) => self.layout(l),
         }
-    }
-
-    fn layout(&mut self, l: &diracord_ast::Layout) {
-        use diracord_ast::LayoutItemKind as K;
-        self.scopes.push(Vec::new());
-        for item in &l.items {
-            match &item.kind {
-                K::Local { name, value } => {
-                    self.expr(value);
-                    self.declare(&name.name);
-                }
-                K::If {
-                    branches,
-                    otherwise,
-                } => {
-                    for b in branches {
-                        self.expr(&b.cond);
-                        self.layout(&b.body);
-                    }
-                    if let Some(o) = otherwise {
-                        self.layout(o);
-                    }
-                }
-                K::For { var, iter, body } => {
-                    self.expr(iter);
-                    self.scopes.push(vec![var.name.clone()]);
-                    self.layout(body);
-                    self.scopes.pop();
-                }
-                K::Element {
-                    kind,
-                    args,
-                    children,
-                    ..
-                } => {
-                    if let Err(e) = crate::layout::bind_names(*kind, args, item.span) {
-                        self.diags.push(*e.diagnostic);
-                    }
-                    args.iter().for_each(|a| self.expr(&a.value));
-                    if let Some(c) = children {
-                        self.layout(c);
-                    }
-                }
-            }
-        }
-        self.scopes.pop();
     }
 
     fn call(&mut self, callee: &Expr, args: &[Arg], span: Span) {
@@ -362,15 +315,25 @@ impl Checker<'_> {
             return;
         };
         let positional = args.iter().filter(|a| a.name.is_none()).count();
+        let rest_at = spec.params.iter().position(|p| p.variadic);
+        let fixed = rest_at.unwrap_or(spec.params.len());
         let mut given = vec![false; spec.params.len()];
-        for (i, slot) in given.iter_mut().enumerate().take(positional) {
-            *slot = i < spec.params.len();
+        for slot in given.iter_mut().take(positional.min(fixed)) {
+            *slot = true;
+        }
+        if let Some(r) = rest_at.filter(|_| positional > fixed) {
+            given[r] = true;
         }
         for (i, a) in args.iter().enumerate() {
             let param = match &a.name {
                 Some(n) => spec.params.iter().position(|p| p.name == n.name),
-                None => Some(args[..i].iter().filter(|x| x.name.is_none()).count())
-                    .filter(|&k| k < spec.params.len()),
+                None => {
+                    let k = args[..i].iter().filter(|x| x.name.is_none()).count();
+                    match rest_at {
+                        Some(r) if k >= r => Some(r),
+                        _ => Some(k).filter(|&k| k < spec.params.len()),
+                    }
+                }
             };
             if let Some(n) = &a.name {
                 match param {
@@ -400,7 +363,7 @@ impl Checker<'_> {
                 self.expr(&a.value);
             }
         }
-        if positional > spec.params.len() {
+        if rest_at.is_none() && positional > spec.params.len() {
             let extra = args
                 .iter()
                 .filter(|a| a.name.is_none())

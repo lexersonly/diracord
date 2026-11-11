@@ -1,8 +1,36 @@
 # RFC: sintaxe do layout de Components v2
 
-> Status: **decidido em 2026-11-11**: **A + B**. A palavra é `layout`, e componentes sem
-> bloco aceitam opções nomeadas (`separator(spacing: "large")`). Implementado; guia em
-> [docs/language.md](../language.md#components-v2).
+> Status: **decidido e revisto em 2026-11-11**. A primeira escolha (A+B, blocos com
+> `layout { }`) ficou confusa para iniciantes; o dono pediu o estilo do discord.js/aoi.js.
+> Decisão final: **peças estilo discord.js** (proposta D abaixo) + forma objeto (B).
+> Guia: [docs/language.md](../language.md#components-v2).
+
+## Proposta D — Peças estilo discord.js (escolhida)
+
+Cada peça é uma função comum que devolve um valor; as peças entram umas nas outras,
+como `new ContainerBuilder().addTextDisplayComponents(...)` no discord.js, mas sem
+`new` nem `.add...`:
+
+```text
+reply container(
+  text("## Welcome, $user.name"),
+  section("Read the rules first.", thumbnail: user.avatar),
+  separator(),
+  row(button("accept", "Accept", style: "success"),
+      button("decline", "Decline", style: "danger")),
+  color: "purple"
+)
+```
+
+- `+` Nada de sintaxe nova: são chamadas de função, que o iniciante já usa (`reply`, `ban`).
+- `+` Peças são valores: cabem em variáveis, listas, `if` e `for` normais.
+- `+` Erro com seta na peça errada: `button(...)` dentro de `container(...)` → "vai em `row(...)`".
+- `-` Muitos parênteses em layouts grandes (resolvido com variáveis e uma peça por linha).
+
+Também foi considerada uma forma estilo aoi.js (`addContainer`, `addText`, `addButton`,
+uma por linha, montando a mensagem aos poucos); ficou de fora a pedido do dono.
+
+---
 
 ## Contexto
 
@@ -116,7 +144,7 @@ Leia as regras antes de continuar. {thumbnail $user.avatar}
 **A**, com **B** aceito como forma "crua" (útil para IAs e para quem vem de JSON):
 as duas geram a mesma árvore, e o `check` valida as duas.
 
-## Decisão
+## Primeira decisão (substituída pela proposta D)
 
 1. Proposta: **A + B**.
 2. Palavra: **`layout`**.

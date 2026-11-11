@@ -7,7 +7,7 @@
 use diracord_functions::{registry, Category};
 
 /// Categories in documentation order.
-const CATEGORIES: [Category; 9] = [
+const CATEGORIES: [Category; 10] = [
     Category::Messages,
     Category::Moderation,
     Category::Roles,
@@ -17,6 +17,7 @@ const CATEGORIES: [Category; 9] = [
     Category::Math,
     Category::Lists,
     Category::Utility,
+    Category::Components,
 ];
 
 /// One line per function, for `llm.txt` (`--llm`).

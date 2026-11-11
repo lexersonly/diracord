@@ -501,91 +501,6 @@ fn reply_value(src: &str) -> Value {
 }
 
 #[test]
-fn layout_block_builds_the_object_form() {
-    let a = r###"command("t") {
-  local opcoes = ["sim", "talvez"]
-  reply layout {
-    container(color: "purple") {
-      text "## Oi $user.name"
-      section {
-        text "Leia as regras."
-        thumbnail "https://x/a.png" description: "logo"
-      }
-      separator(spacing: "large")
-      if len(opcoes) > 5 {
-        text "muitas"
-      }
-      row {
-        for o in opcoes {
-          button(o, upper(o))
-        }
-        button(label: "Site", url: "https://diracord.dev")
-      }
-    }
-  }
-}"###;
-    let b = r###"command("t") {
-  reply {
-    layout: [
-      { container: [
-          { text: "## Oi Ana" },
-          { section: ["Leia as regras."], thumbnail: { url: "https://x/a.png", description: "logo" } },
-          { separator: true, spacing: "large" },
-          { row: [
-              { button: "sim", label: "SIM" },
-              { button: "talvez", label: "TALVEZ" },
-              { button: null, label: "Site", url: "https://diracord.dev" }
-          ] }
-        ], color: "purple" }
-    ]
-  }
-}"###;
-    assert_eq!(reply_value(a), reply_value(b));
-}
-
-#[test]
-fn invalid_layouts_are_explained() {
-    let src = "command(\"t\") { reply { layout: [{ button: \"x\", label: \"X\" }] } }";
-    assert_eq!(err_code(src, Trigger::command("t")), codes::E0117);
-    let mut host = TestHost::new();
-    let e = run(
-        &engine(src),
-        Trigger::command("t"),
-        &mut host,
-        &mut MemoryStore::new(),
-    )
-    .unwrap_err();
-    assert!(
-        e.diagnostic.message.contains("dentro de `row`"),
-        "{}",
-        e.diagnostic.message
-    );
-    let two = "command(\"t\") { reply layout { section { text \"a\"\n thumbnail \"https://a\"\n button(\"b\", \"B\") } } }";
-    assert_eq!(err_code(two, Trigger::command("t")), codes::E0117);
-}
-
-#[test]
-fn checker_checks_layout_arguments() {
-    assert!(check_codes(
-        "command(\"a\") { reply layout { separator(spacing: \"large\", line: false) } }"
-    )
-    .is_empty());
-    assert_eq!(
-        check_codes("command(\"a\") { reply layout { separator(spacng: \"large\") } }"),
-        [codes::E0303]
-    );
-    assert_eq!(
-        check_codes("command(\"a\") { reply layout { text } }"),
-        [codes::E0300]
-    );
-    assert_eq!(
-        check_codes("command(\"a\") { reply layout { text nada } }"),
-        [codes::E0200]
-    );
-    assert!(check_codes("command(\"a\") { reply layout { row { for i in range(3) { button(toText(i), \"B\") } } } }").is_empty());
-}
-
-#[test]
 fn guild_is_not_an_alias_but_gets_a_safe_fix() {
     let src =
         "command(\"a\") {\n  reply \"Servidor: $guild.name\"\n  set(\"x\", 1, scope: guild)\n}";
@@ -607,4 +522,81 @@ fn guild_is_not_an_alias_but_gets_a_safe_fix() {
     assert!(check_codes(&fixed).is_empty());
     // A variable the author created called `guild` is fine.
     assert!(check_codes("command(\"a\") { local guild = server\n reply guild.name }").is_empty());
+}
+
+#[test]
+fn components_pieces_build_the_object_form() {
+    let pieces = r###"command("t") {
+  local options = ["yes", "maybe"]
+  local box = container(
+    text("## Hi $user.name"),
+    section("Read the rules.", thumbnail: thumbnail("https://x/a.png", description: "logo")),
+    separator(spacing: "large"),
+    row(button(options[0], upper(options[0])), button(options[1], upper(options[1])), button(label: "Site", url: "https://diracord.dev")),
+    color: "purple"
+  )
+  reply box
+}"###;
+    let object = r###"command("t") {
+  reply {
+    layout: [
+      { container: [
+          { text: "## Hi Ana" },
+          { section: ["Read the rules."], thumbnail: { url: "https://x/a.png", description: "logo" } },
+          { separator: true, spacing: "large" },
+          { row: [
+              { button: "yes", label: "YES" },
+              { button: "maybe", label: "MAYBE" },
+              { button: null, label: "Site", url: "https://diracord.dev" }
+          ] }
+        ], color: "purple" }
+    ]
+  }
+}"###;
+    assert_eq!(reply_value(pieces), reply_value(object));
+    // A list of pieces, or a single piece, is a whole message too.
+    let list = reply_value("command(\"t\") { reply [text(\"a\"), row(button(\"b\", \"B\"))] }");
+    assert_eq!(
+        list.field("layout")
+            .map(|l| matches!(l, Value::List(x) if x.len() == 2)),
+        Some(true)
+    );
+}
+
+#[test]
+fn wrong_piece_gets_an_arrow_on_itself() {
+    let src = "command(\"t\") {\n  reply container(text(\"a\"), button(\"b\", \"B\"))\n}";
+    let mut host = TestHost::new();
+    let e = run(
+        &engine(src),
+        Trigger::command("t"),
+        &mut host,
+        &mut MemoryStore::new(),
+    )
+    .unwrap_err();
+    assert_eq!(e.diagnostic.code, codes::E0117);
+    assert_eq!(
+        &src[e.diagnostic.primary_span().unwrap().range()],
+        "button(\"b\", \"B\")"
+    );
+    assert!(
+        e.diagnostic.help.iter().any(|h| h.contains("row(...)")),
+        "{:?}",
+        e.diagnostic.help
+    );
+    assert_eq!(
+        err_code(
+            "command(\"t\") { reply button(\"b\", \"B\") }",
+            Trigger::command("t")
+        ),
+        codes::E0117
+    );
+    assert!(check_codes(
+        "command(\"t\") { reply row(button(\"a\", \"A\"), button(\"b\", \"B\")) }"
+    )
+    .is_empty());
+    assert_eq!(
+        check_codes("command(\"t\") { reply row() }"),
+        [codes::E0300]
+    );
 }
