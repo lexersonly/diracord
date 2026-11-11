@@ -10,3 +10,7 @@ repository.workspace = true
 diracord-diagnostics.workspace = true
 diracord-ast.workspace = true
 diracord-value.workspace = true
+diracord-functions.workspace = true
+
+[dev-dependencies]
+diracord-parser.workspace = true

@@ -31,6 +31,8 @@ version = "0.1.0"
 dependencies = [
  "diracord-ast",
  "diracord-diagnostics",
+ "diracord-functions",
+ "diracord-parser",
  "diracord-value",
 ]
 
