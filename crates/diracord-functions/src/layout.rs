@@ -5,13 +5,13 @@
 //!
 //! ```text
 //! { layout: [
-//!     { container: [ { text: "## Oi" }, { separator: true },
+//!     { container: [ { text: "## Hi" }, { separator: true },
 //!                    { row: [ { button: "ok", label: "Ok", style: "success" } ] } ],
 //!       color: "purple" }
 //! ] }
 //! ```
 //!
-//! The pieces (`container(text("## Oi"), row(button("ok", "Ok")))`) build
+//! The pieces (`container(text("## Hi"), row(button("ok", "Ok")))`) build
 //! exactly this shape, so everything is checked here before going to Discord.
 
 use diracord_value::{Map, Value};

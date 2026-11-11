@@ -9,11 +9,11 @@
 //!
 //! # Rules worth knowing
 //!
-//! - **Calls without parentheses** (`reply "oi"`, `ban user reason`) are
+//! - **Calls without parentheses** (`reply "hi"`, `ban user reason`) are
 //!   allowed at the start of a statement and right after `local x =`, `x =`
 //!   and `return`. Arguments are separated by spaces (commas optional) and end
 //!   at the line break. An argument that is itself a call needs parentheses:
-//!   `reply upper("oi")`.
+//!   `reply upper("hi")`.
 //! - **Conditions** (`if`, `while`, `for ... in`, `chain`) cannot start an
 //!   object with `{`, because `{` opens the block there.
 //! - **`$name[a;b]`** is the same as `name(a, b)`, but only when

@@ -132,7 +132,7 @@ impl Value {
 
 /// Text form used by string interpolation and `reply`.
 ///
-/// - `null` → `""` (so `"Oi $nada"` prints `"Oi "`)
+/// - `null` → `""` (so `"Hi $nothing"` prints `"Hi "`)
 /// - numbers: whole floats print without `.0`
 /// - objects with a `mention` field print the mention, else `name`, else JSON-like
 /// - lists print as `a, b, c`

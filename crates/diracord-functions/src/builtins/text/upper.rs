@@ -1,7 +1,7 @@
 //! `upper` — Texto em MAIÚSCULAS.
 //!
 //! ```text
-//! reply upper("oi")
+//! reply upper("hi")
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -15,7 +15,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Texto em MAIÚSCULAS.",
     params: PARAMS,
     returns: "text",
-    example: "reply upper(\"oi\")",
+    example: "reply upper(\"hi\")",
     call,
 };
 

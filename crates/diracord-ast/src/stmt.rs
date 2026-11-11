@@ -38,7 +38,7 @@ pub enum StmtKind {
         /// New value.
         value: Expr,
     },
-    /// An expression used as a statement, usually a call: `reply "oi"`.
+    /// An expression used as a statement, usually a call: `reply "hi"`.
     Expr(Expr),
     /// `if a { } else if b { } else { }`
     If {
@@ -63,7 +63,7 @@ pub enum StmtKind {
         /// Body.
         body: Block,
     },
-    /// `chain x { 1 => reply "um"  _ => reply "outro" }` — the switch/match.
+    /// `chain x { 1 => reply "one"  _ => reply "other" }` — the switch/match.
     Chain {
         /// The value being matched.
         subject: Expr,

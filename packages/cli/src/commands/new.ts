@@ -39,23 +39,43 @@ intents = ["guilds", "guildMessages", "messageContent", "guildMembers"]
 `,
     ".env.example": "# Copie para .env e coloque o token do seu bot. NUNCA envie o .env para o git.\nDISCORD_TOKEN=\n",
     ".gitignore": ".env\ndata/\nnode_modules/\n",
-    "commands/ping.dcs": `// Responde "Pong!" para !ping e /ping
+    "commands/ping.dcs": `// Answers "Pong!" to !ping and /ping
 command("ping") {
   reply "Pong!"
 }
 `,
-    "commands/coins.dcs": `// Moedas por usuário, salvas no Dirabank
+    "commands/coins.dcs": `// Coins per user, saved in Dirabank. giveCoins is a function of your own (fn).
+fn giveCoins(amount: number = 1) {
+  local total = get("coins", 0, scope: user) + amount
+  set("coins", total, scope: user)
+  return total
+}
+
 command("coins") {
-  local coins = get("coins", 0, scope: user) + 1
-  set("coins", coins, scope: user)
-  reply "$user.name, você tem $coins moedas"
+  local total = giveCoins()
+  reply "$user.name, you have $total coins"
 }
 `,
-    "events/join.dcs": `// Boas-vindas
+    "commands/rules.dcs": `// Components v2: pieces go inside each other, like discord.js builders.
+command("rules") {
+  reply container(
+    text("## Welcome, $user.name"),
+    text("Be nice and have fun."),
+    row(button("accept", "I agree", style: "success")),
+    color: "blurple"
+  )
+}
+
+// Runs when someone clicks the button with id "accept".
+button("accept") {
+  reply "Thanks, $user.name!" ephemeral: true
+}
+`,
+    "events/join.dcs": `// Says hi in the #welcome channel when someone joins.
 memberJoin {
   local ch = channel("welcome")
   if ch {
-    send ch "Bem-vindo, $user.mention!"
+    send ch "Welcome, $user.mention!"
   }
 }
 `,

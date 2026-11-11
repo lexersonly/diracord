@@ -1,7 +1,7 @@
 //! `channel` — Procura um canal do servidor pelo nome, id ou menção. Devolve null se não achar.
 //!
 //! ```text
-//! send channel("welcome") "Oi"
+//! send channel("welcome") "Hi"
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -20,7 +20,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Procura um canal do servidor pelo nome, id ou menção. Devolve null se não achar.",
     params: PARAMS,
     returns: "channel",
-    example: "send channel(\"welcome\") \"Oi\"",
+    example: "send channel(\"welcome\") \"Hi\"",
     call,
 };
 

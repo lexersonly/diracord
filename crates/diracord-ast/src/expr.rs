@@ -34,11 +34,11 @@ pub enum ExprKind {
     Literal(Literal),
     /// A variable or function name: `x`, `user`.
     Name(Ident),
-    /// A string with interpolation: `"Oi $user.name"`.
+    /// A string with interpolation: `"Hi $user.name"`.
     Template(Vec<TemplatePart>),
     /// `[1, 2, 3]`
     List(Vec<Expr>),
-    /// `{ title: "Oi", color: "red" }` (embeds use this).
+    /// `{ title: "Hi", color: "red" }` (embeds use this).
     Object(Vec<ObjectField>),
     /// `-x`, `!x`, `not x`.
     Unary {
@@ -70,7 +70,7 @@ pub enum ExprKind {
         /// The index or key.
         index: Box<Expr>,
     },
-    /// `reply("oi")`, `reply "oi"`, `$ban[user;reason]`.
+    /// `reply("hi")`, `reply "hi"`, `$ban[user;reason]`.
     Call {
         /// What is called (almost always a [`ExprKind::Name`]).
         callee: Box<Expr>,
@@ -116,7 +116,7 @@ pub struct ObjectField {
     pub span: Span,
 }
 
-/// A call argument, positional (`"oi"`) or named (`scope: user`).
+/// A call argument, positional (`"hi"`) or named (`scope: user`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Arg {
     /// `Some` for `name: value`.
@@ -130,9 +130,9 @@ pub struct Arg {
 /// How a call was written. All three mean the same thing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum CallStyle {
-    /// `reply("oi")`
+    /// `reply("hi")`
     Parens,
-    /// `reply "oi"`
+    /// `reply "hi"`
     Bare,
     /// `$reply[oi]` (only when `[syntax] dollar = true`).
     Dollar,

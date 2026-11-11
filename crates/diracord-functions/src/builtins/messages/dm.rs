@@ -1,7 +1,7 @@
 //! `dm` — Envia uma mensagem privada para um usuário.
 //!
 //! ```text
-//! dm user "Bem-vindo!"
+//! dm user "Welcome!"
 //! ```
 
 use super::super::common;
@@ -20,7 +20,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Envia uma mensagem privada para um usuário.",
     params: PARAMS,
     returns: "message",
-    example: "dm user \"Bem-vindo!\"",
+    example: "dm user \"Welcome!\"",
     call,
 };
 

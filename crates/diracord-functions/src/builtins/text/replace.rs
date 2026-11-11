@@ -1,7 +1,7 @@
 //! `replace` — Troca todas as ocorrências de um pedaço do texto.
 //!
 //! ```text
-//! replace("oi mundo", "mundo", "Diracord")
+//! replace("hello world", "world", "Diracord")
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -19,7 +19,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Troca todas as ocorrências de um pedaço do texto.",
     params: PARAMS,
     returns: "text",
-    example: "replace(\"oi mundo\", \"mundo\", \"Diracord\")",
+    example: "replace(\"hello world\", \"world\", \"Diracord\")",
     call,
 };
 

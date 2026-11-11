@@ -1,7 +1,7 @@
 //! `trim` — Tira espaços do começo e do fim.
 //!
 //! ```text
-//! local t = trim("  oi ")
+//! local t = trim("  hi ")
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -15,7 +15,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Tira espaços do começo e do fim.",
     params: PARAMS,
     returns: "text",
-    example: "local t = trim(\"  oi \")",
+    example: "local t = trim(\"  hi \")",
     call,
 };
 

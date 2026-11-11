@@ -3,7 +3,7 @@
 > Gerado por `cargo run -q -p diracord-functions --example gendocs`. Não edite à mão.
 
 Total: 54 funções. Todas podem ser chamadas com ou sem parênteses:
-`reply "oi"` é igual a `reply("oi")`. Argumentos com `?` são opcionais e
+`reply "hi"` é igual a `reply("hi")`. Argumentos com `?` são opcionais, `...` aceita vários, e
 também podem ser passados pelo nome: `get("coins", scope: user)`.
 
 ## messages
@@ -35,7 +35,7 @@ Envia uma mensagem em um canal.
 Devolve: `message`
 
 ```
-send channel("geral") "Olá!"
+send channel("general") "Hello!"
 ```
 
 ### `dm(user: user, content: text|embed)`
@@ -50,7 +50,7 @@ Envia uma mensagem privada para um usuário.
 Devolve: `message`
 
 ```
-dm user "Bem-vindo!"
+dm user "Welcome!"
 ```
 
 ### `react(emoji: text)`
@@ -125,7 +125,7 @@ Expulsa um membro do servidor.
 Devolve: `null`
 
 ```
-kick user "regras"
+kick user "rules"
 ```
 
 ### `timeout(user: user, seconds: number, reason?: text)`
@@ -204,7 +204,7 @@ Procura um canal do servidor pelo nome, id ou menção. Devolve null se não ach
 Devolve: `channel`
 
 ```
-send channel("welcome") "Oi"
+send channel("welcome") "Hi"
 ```
 
 ### `member(query: any)`
@@ -297,7 +297,7 @@ Texto em MAIÚSCULAS.
 Devolve: `text`
 
 ```
-reply upper("oi")
+reply upper("hi")
 ```
 
 ### `lower(text: text)`
@@ -325,7 +325,7 @@ Tira espaços do começo e do fim.
 Devolve: `text`
 
 ```
-local t = trim("  oi ")
+local t = trim("  hi ")
 ```
 
 ### `len(value: any)`
@@ -355,7 +355,7 @@ Troca todas as ocorrências de um pedaço do texto.
 Devolve: `text`
 
 ```
-replace("oi mundo", "mundo", "Diracord")
+replace("hello world", "world", "Diracord")
 ```
 
 ### `split(text: text, separator?: text)`
@@ -415,7 +415,7 @@ Diz se um texto contém outro, ou se uma lista contém um valor.
 Devolve: `bool`
 
 ```
-if contains(message.content, "palavrão") { deleteMessage }
+if contains(message.content, "badword") { deleteMessage }
 ```
 
 ## math
@@ -432,7 +432,7 @@ Número inteiro aleatório entre min e max (inclusive). Sem argumentos: entre 0 
 Devolve: `number`
 
 ```
-local dado = random(1, 6)
+local dice = random(1, 6)
 ```
 
 ### `round(number: number)`
@@ -535,7 +535,7 @@ Devolve uma nova lista com o valor no fim.
 Devolve: `list`
 
 ```
-list = push(list, "novo")
+list = push(list, "new")
 ```
 
 ### `join(list: list, separator?: text)`
@@ -550,7 +550,7 @@ Junta os itens de uma lista em um texto.
 Devolve: `text`
 
 ```
-reply join(nomes, ", ")
+reply join(names, ", ")
 ```
 
 ### `first(list: list)`

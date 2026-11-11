@@ -1,7 +1,7 @@
 //! `kick` — Expulsa um membro do servidor.
 //!
 //! ```text
-//! kick user "regras"
+//! kick user "rules"
 //! ```
 
 use super::super::common;
@@ -20,7 +20,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Expulsa um membro do servidor.",
     params: PARAMS,
     returns: "null",
-    example: "kick user \"regras\"",
+    example: "kick user \"rules\"",
     call,
 };
 

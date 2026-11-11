@@ -24,7 +24,7 @@ Dentro de texto só valem os escapes \n, \t, \", \\ e \$.
 
 ### E0005 — variável vazia no texto
 
-Um $ dentro do texto precisa de um nome logo depois, como "Oi $user.name". Para escrever o símbolo, use \$.
+Um $ dentro do texto precisa de um nome logo depois, como "Hi $user.name". Para escrever o símbolo, use \$.
 
 ## Estrutura do código (parser e checagem)
 

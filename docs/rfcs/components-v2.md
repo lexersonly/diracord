@@ -59,15 +59,15 @@ Layout como código: cada componente é uma palavra; quem contém outros usa `{ 
 ```text
 reply layout {
   container(color: "purple") {
-    text "## Bem-vindo, $user.name"
+    text "## Welcome, $user.name"
     section {
-      text "Leia as regras antes de continuar."
+      text "Read the rules before you continue."
       thumbnail user.avatar
     }
     separator
     row {
-      button("aceitar", "Aceito", style: "success")
-      button("recusar", "Não aceito", style: "danger")
+      button("accept", "Accept", style: "success")
+      button("decline", "Decline", style: "danger")
     }
   }
 }
@@ -87,12 +87,12 @@ Reaproveita a sintaxe de objeto que já existe para embeds. Sem palavras novas.
 reply {
   layout: [
     { container: [
-        { text: "## Bem-vindo, $user.name" },
-        { section: ["Leia as regras antes de continuar."], thumbnail: user.avatar },
+        { text: "## Welcome, $user.name" },
+        { section: ["Read the rules before you continue."], thumbnail: user.avatar },
         { separator: true },
         { row: [
-            { button: "aceitar", label: "Aceito", style: "success" },
-            { button: "recusar", label: "Não aceito", style: "danger" }
+            { button: "accept", label: "Accept", style: "success" },
+            { button: "decline", label: "Decline", style: "danger" }
         ] }
       ], color: "purple" }
   ]
@@ -112,10 +112,10 @@ Precisa de texto em várias linhas (sintaxe nova: `"""`).
 ```text
 reply layout """
 ::: container purple
-## Bem-vindo, $user.name
-Leia as regras antes de continuar. {thumbnail $user.avatar}
+## Welcome, $user.name
+Read the rules before you continue. {thumbnail $user.avatar}
 ---
-[Aceito](button:aceitar success) [Não aceito](button:recusar danger)
+[Accept](button:accept success) [Decline](button:decline danger)
 :::
 """
 ```

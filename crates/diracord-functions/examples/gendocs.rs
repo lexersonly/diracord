@@ -44,7 +44,7 @@ fn main() {
         "Total: {} funções. Todas podem ser chamadas com ou sem parênteses:",
         r.len()
     );
-    println!("`reply \"oi\"` é igual a `reply(\"oi\")`. Argumentos com `?` são opcionais e");
+    println!("`reply \"hi\"` é igual a `reply(\"hi\")`. Argumentos com `?` são opcionais, `...` aceita vários, e");
     println!("também podem ser passados pelo nome: `get(\"coins\", scope: user)`.\n");
     for c in CATEGORIES {
         println!("## {c}\n");

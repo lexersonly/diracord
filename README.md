@@ -5,12 +5,12 @@ discord.js, **mais completa** (variáveis, condições, laços, erros tratáveis
 **leve** (motor em Rust, meta de rodar em ~100 MB de RAM).
 
 ```dcs
-command("ban", user: member, reason: text = "sem motivo") {
+command("ban", user: member, reason: text = "no reason") {
   testing {
     ban user reason
-    reply "$user.name foi banido. Motivo: $reason"
+    reply "$user.name was banned. Reason: $reason"
   } catch err {
-    reply "Não consegui: $err"
+    reply "Could not do it: $err"
   }
 }
 ```

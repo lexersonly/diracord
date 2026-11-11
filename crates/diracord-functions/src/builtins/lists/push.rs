@@ -1,7 +1,7 @@
 //! `push` — Devolve uma nova lista com o valor no fim.
 //!
 //! ```text
-//! list = push(list, "novo")
+//! list = push(list, "new")
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -19,7 +19,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Devolve uma nova lista com o valor no fim.",
     params: PARAMS,
     returns: "list",
-    example: "list = push(list, \"novo\")",
+    example: "list = push(list, \"new\")",
     call,
 };
 

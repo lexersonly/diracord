@@ -1,7 +1,7 @@
 //! `contains` — Diz se um texto contém outro, ou se uma lista contém um valor.
 //!
 //! ```text
-//! if contains(message.content, "palavrão") { deleteMessage }
+//! if contains(message.content, "badword") { deleteMessage }
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -19,7 +19,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Diz se um texto contém outro, ou se uma lista contém um valor.",
     params: PARAMS,
     returns: "bool",
-    example: "if contains(message.content, \"palavrão\") { deleteMessage }",
+    example: "if contains(message.content, \"badword\") { deleteMessage }",
     call,
 };
 

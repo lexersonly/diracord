@@ -92,7 +92,7 @@ impl Parser<'_> {
         let span = self.span();
         let mut d = Diagnostic::error(codes::E0114, "Esse código está solto, fora de um comando ou evento")
             .with_label(span, "código fora de command / evento")
-            .with_help("coloque dentro de um comando: command(\"nome\") { ... }, ou de um evento: memberJoin { ... }");
+            .with_help("coloque dentro de um comando: command(\"name\") { ... }, ou de um evento: memberJoin { ... }");
         if let TokenKind::Ident(s) = self.kind() {
             if let Some(sugg) = did_you_mean(s, ["command", "button", "menu", "modal"]) {
                 d = d.with_help(format!("você quis dizer `{sugg}`?"));

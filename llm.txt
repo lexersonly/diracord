@@ -106,14 +106,14 @@ dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] do
 
 ## 4. Regras de significado
 
-- `reply "oi"` == `reply("oi")`. Em chamada sem parênteses, os argumentos são separados por
-  espaço (vírgula opcional) e cada um é uma expressão completa: `reply "Oi " + user.name` OK.
-  Uma chamada dentro de outra precisa de parênteses: `reply upper("oi")`. ERRADO: `reply upper "oi"`.
+- `reply "hi"` == `reply("hi")`. Em chamada sem parênteses, os argumentos são separados por
+  espaço (vírgula opcional) e cada um é uma expressão completa: `reply "Hi " + user.name` OK.
+  Uma chamada dentro de outra precisa de parênteses: `reply upper("hi")`. ERRADO: `reply upper "hi"`.
 - Chamada sem parênteses só no começo da instrução, depois de `local x =`, `x =` e `return`.
   Em `if`/`while`/`for`/`chain` use parênteses: `if hasRole(user, "VIP") { ... }`.
 - O nome de uma função sozinho é uma chamada sem argumentos: `deleteMessage`, `now`.
 - Variáveis: `local x = 1` cria (vale até o fim do bloco); `x = 2` muda uma que já existe.
-  Mudar campo/posição: `obj.campo = 1`, `lista[0] = 1` (a posição precisa existir).
+  Mudar campo/posição: `obj.campo = 1`, `list[0] = 1` (a posição precisa existir).
 - Tipos dinâmicos: null, bool, number (inteiro ou decimal), text, list, object.
   Tipos só existem nos argumentos de `command(...)`.
 - Falso: `null`, `false`, `0`, `""`, `[]`. Todo o resto é verdadeiro.
@@ -121,9 +121,9 @@ dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] do
   `- * / %` só números. `7 / 2` = 3.5; `6 / 2` = 3. Dividir por 0 é erro E0203.
 - `==` compara por valor (`1 == 1.0` é true). `<` `>` funcionam entre números ou entre textos.
 - `and`/`or` (ou `&&`/`||`) param cedo e devolvem true/false.
-- `for x in lista`, `for letra in "texto"`, `for i in 5` (0..4), `for chave in objeto`.
+- `for x in list`, `for letter in "text"`, `for i in 5` (0..4), `for chave in objeto`.
   Para intervalos: `for i in range(1, 6)` (1..5).
-- `chain x { 1 => reply "um"  "a" => reply "letra"  _ => reply "outro" }`: o primeiro caso igual
+- `chain x { 1 => reply "one"  "a" => reply "letter"  _ => reply "other" }`: o primeiro caso igual
   ganha; `_` = qualquer outro e deve ser o último. Não há "fall-through".
 - `testing { ... } catch err { ... }`: `err` é o TEXTO da mensagem de erro. Erros de limite
   (tempo, passos, memória, ações) NÃO podem ser pegos.
@@ -202,7 +202,7 @@ Dentro de command, eventos e button/menu/modal:
 - Argumentos de `command` viram variáveis com o mesmo nome.
 
 Tipos de argumento de comando: text, number, bool, member, user, channel, role.
-No prefixo, o último argumento `text` recebe o resto da linha: `!ban @Zé spam de link`.
+No prefixo, o último argumento `text` recebe o resto da linha: `!ban @Joe link spam`.
 
 ## 6. Eventos
 
@@ -363,29 +363,29 @@ E0504 motor não encontrado
 - usar dentro da `fn` uma variável `local` de quem chamou → passe como argumento (E0200)
 - `if x = 1 { }` → `if x == 1 { }` (E0100, corrigido por --fix)
 - `x = 1` sem criar antes → `local x = 1` (E0200, corrigido por --fix)
-- `rpely "oi"` → `reply "oi"` (E0201, com sugestão)
+- `rpely "hi"` → `reply "hi"` (E0201, com sugestão)
 - `memberjoin { }` → `memberJoin { }` (E0113, corrigido por --fix)
 - `command(ping) { }` → `command("ping") { }` (E0109)
 - `command("a", x: string)` → `command("a", x: text)` (E0107, corrigido por --fix)
 - `command("a", x: text = "", y: member)` → opcionais por último (E0112)
-- `reply 'oi'` → `reply "oi"` (aspas simples não existem, E0002)
-- `reply upper "oi"` → `reply upper("oi")` (chamada dentro de chamada)
+- `reply 'hi'` → `reply "hi"` (aspas simples não existem, E0002)
+- `reply upper "hi"` → `reply upper("hi")` (chamada dentro de chamada)
 - `if hasRole user "VIP" { }` → `if hasRole(user, "VIP") { }`
 - `reply "Total: ${a + b}"` → `local t = a + b` e `reply "Total: $t"`, ou `reply "Total: " + (a + b)`
-- `"custa $5"` → `"custa \$5"` (E0005, corrigido por --fix)
-- `reply "oi"` fora de um command/evento → coloque dentro de `command("x") { ... }` (E0114)
-- `$ban[user;motivo]` com o atalho desligado → `ban(user, motivo)` (E0108, corrigido por --fix)
+- `"costs $5"` → `"costs \$5"` (E0005, corrigido por --fix)
+- `reply "hi"` fora de um command/evento → coloque dentro de `command("x") { ... }` (E0114)
+- `$ban[user;reason]` com o atalho desligado → `ban(user, reason)` (E0108, corrigido por --fix)
   ou ligue `[syntax] dollar = true`
 - `user.nmae` → `user.name` (E0209, com sugestão)
-- `lista.length` → `len(lista)`
+- `list.length` → `len(list)`
 - `chain x { _ => ...  1 => ... }` → `_` sempre por último (E0110)
 - `break` fora de for/while → `stop` (E0115)
 - `get("x", scope: guild)` → `scope: server` (E0401)
 - `guild.name` / `$guild.name` / `scope: guild` → `server` (E0200/E0401, corrigido por --fix)
 - `reply container(button("a", "A"))` → `reply container(row(button("a", "A")))` (E0117, seta no botão)
 - `section("a")` sem acessório → `section("a", thumbnail: url)` ou `section("a", button: button("b", "B"))`
-- `container("texto solto")` → `container(text("texto solto"))`
-- `reply "Oi", row(...)` → `reply [text("Oi"), row(...)]` (layout não mistura com texto solto)
+- `container("loose text")` → `container(text("loose text"))`
+- `reply "Hi", row(...)` → `reply [text("Hi"), row(...)]` (layout não mistura com texto solto)
 - Ids grandes como número (`123456789012345678901`) → use texto `"123..."` (E0003)
 
 ## 12. Exemplos
@@ -395,40 +395,40 @@ command("ping") {
   reply "Pong!"
 }
 
-command("ban", user: member, reason: text = "sem motivo") {
+command("ban", user: member, reason: text = "no reason") {
   testing {
     ban user reason
-    reply "$user.name foi banido. Motivo: $reason"
+    reply "$user.name was banned. Reason: $reason"
   } catch err {
-    reply "Não consegui banir: $err"
+    reply "Could not ban: $err"
   }
 }
 
-command("dado", lados: number = 6) {
-  local n = random(1, lados)
+command("dice", sides: number = 6) {
+  local n = random(1, sides)
   chain n {
-    1 => reply "1... azar!"
-    _ => reply "Saiu $n"
+    1 => reply "1... bad luck!"
+    _ => reply "You rolled $n"
   }
 }
 
-command("perfil") {
+command("profile") {
   reply {
-    title: "Perfil de $user.name"
+    title: "Profile of $user.name"
     color: "blurple"
-    fields: [{ name: "Moedas", value: get("coins", 0, scope: user), inline: true }]
+    fields: [{ name: "Coins", value: get("coins", 0, scope: user), inline: true }]
   }
 }
 
 memberJoin {
   local ch = channel("welcome")
   if ch {
-    send ch "Bem-vindo, $user.mention!"
+    send ch "Welcome, $user.mention!"
   }
 }
 
 button("confirm") {
-  reply "Confirmado!" ephemeral: true
+  reply "Confirmed!" ephemeral: true
 }
 ```
 

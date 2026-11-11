@@ -1,7 +1,7 @@
 //! `random` — Número inteiro aleatório entre min e max (inclusive). Sem argumentos: entre 0 e 1 (decimal).
 //!
 //! ```text
-//! local dado = random(1, 6)
+//! local dice = random(1, 6)
 //! ```
 
 use super::super::common;
@@ -20,7 +20,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Número inteiro aleatório entre min e max (inclusive). Sem argumentos: entre 0 e 1 (decimal).",
     params: PARAMS,
     returns: "number",
-    example: "local dado = random(1, 6)",
+    example: "local dice = random(1, 6)",
     call,
 };
 

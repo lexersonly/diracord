@@ -1,7 +1,7 @@
 //! `send` — Envia uma mensagem em um canal.
 //!
 //! ```text
-//! send channel("geral") "Olá!"
+//! send channel("general") "Hello!"
 //! ```
 
 use super::super::common;
@@ -24,7 +24,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Envia uma mensagem em um canal.",
     params: PARAMS,
     returns: "message",
-    example: "send channel(\"geral\") \"Olá!\"",
+    example: "send channel(\"general\") \"Hello!\"",
     call,
 };
 

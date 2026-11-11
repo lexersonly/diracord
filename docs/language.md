@@ -15,13 +15,13 @@ Com argumentos. Os tipos são `text`, `number`, `bool`, `member`, `user`, `chann
 Argumento com `= valor` é opcional e fica no fim:
 
 ```dcs
-command("ban", user: member, reason: text = "sem motivo") {
+command("ban", user: member, reason: text = "no reason") {
   ban user reason
-  reply "$user.name foi banido. Motivo: $reason"
+  reply "$user.name was banned. Reason: $reason"
 }
 ```
 
-O mesmo código atende `!ban @Zé spam de link` (o último argumento `text` pega o resto
+O mesmo código atende `!ban @Joe link spam` (o último argumento `text` pega o resto
 da linha) e `/ban user: @Zé reason: spam`. Os modos ficam em `[commands]` no `diracord.toml`.
 
 ## Eventos
@@ -32,7 +32,7 @@ O nome do evento, direto:
 memberJoin {
   local ch = channel("welcome")
   if ch {
-    send ch "Bem-vindo, $user.mention!"
+    send ch "Welcome, $user.mention!"
   }
 }
 ```
@@ -47,11 +47,11 @@ O código do clique fica separado, ligado pelo id:
 
 ```dcs
 button("confirm") {
-  reply "Confirmado!" ephemeral: true
+  reply "Confirmed!" ephemeral: true
 }
 
-menu("cor") {
-  reply "Você escolheu: " + join(message.values)
+menu("color") {
+  reply "You picked: " + join(message.values)
 }
 ```
 
@@ -59,14 +59,14 @@ Os botões e menus são criados na mensagem com o layout do [Components v2](#com
 
 ## Chamadas com e sem parênteses
 
-`reply "oi"` e `reply("oi")` são iguais. Sem parênteses, os argumentos são separados
+`reply "hi"` e `reply("hi")` são iguais. Sem parênteses, os argumentos são separados
 por espaço e vão até o fim da linha:
 
 ```dcs
 command("t", user: member) {
   timeout user 60 "flood"
-  reply "Oi " + user.name
-  reply upper("chamada dentro de chamada usa parênteses")
+  reply "Hi " + user.name
+  reply upper("a call inside a call needs parentheses")
 }
 ```
 
@@ -75,9 +75,9 @@ Em condições (`if`, `while`, `for`, `chain`) use parênteses: `if hasRole(user
 ## Texto e variáveis no texto
 
 ```dcs
-command("oi") {
+command("hi") {
   local n = 3
-  reply "Oi $user.name, você tem $n avisos. Custa \$5."
+  reply "Hi $user.name, you have $n warnings. It costs \$5."
 }
 ```
 
@@ -86,14 +86,14 @@ command("oi") {
 ## Variáveis
 
 ```dcs
-command("conta") {
+command("math") {
   local x = 15
   x = x + 1
-  local perfil = { nome: user.name, nivel: 1 }
-  perfil.nivel = 2
-  local lista = [1, 2, 3]
-  lista[0] = 10
-  reply "$x $perfil.nivel " + lista[0]
+  local profile = { name: user.name, level: 1 }
+  profile.level = 2
+  local list = [1, 2, 3]
+  list[0] = 10
+  reply "$x $profile.level " + list[0]
 }
 ```
 
@@ -104,11 +104,11 @@ command("conta") {
 ```dcs
 command("t", n: number) {
   if n > 5 {
-    reply "grande"
+    reply "big"
   } else if n > 2 {
-    reply "médio"
+    reply "medium"
   } else {
-    reply "pequeno"
+    reply "small"
   }
 
   for i in range(1, 4) {
@@ -122,14 +122,14 @@ command("t", n: number) {
   }
 
   chain n {
-    1 => reply "um"
-    2 => reply "dois"
-    _ => reply "outro"
+    1 => reply "one"
+    2 => reply "two"
+    _ => reply "other"
   }
 }
 ```
 
-`chain` é o "switch" do Diracord. Cabe numa linha: `chain x { 1 => reply "um"  _ => stop }`.
+`chain` é o "switch" do Diracord. Cabe numa linha: `chain x { 1 => reply "one"  _ => stop }`.
 `stop` encerra o comando; `break`/`continue` só valem em laços.
 
 Operadores: `+ - * / %`, `== != < <= > >=`, `and`/`&&`, `or`/`||`, `not`/`!`.
@@ -170,7 +170,7 @@ command("ban", user: member) {
   testing {
     ban user
   } catch err {
-    reply "Falhou: $err"
+    reply "Failed: $err"
   }
 }
 ```
@@ -180,12 +180,12 @@ command("ban", user: member) {
 ## Embeds
 
 ```dcs
-command("perfil") {
+command("profile") {
   reply {
-    title: "Perfil de $user.name"
-    description: "Membro desde $user.joinedAt"
+    title: "Profile of $user.name"
+    description: "Member since $user.joinedAt"
     color: "blurple"
-    fields: [{ name: "Moedas", value: get("coins", 0, scope: user), inline: true }]
+    fields: [{ name: "Coins", value: get("coins", 0, scope: user), inline: true }]
     footer: "Diracord"
   }
 }
@@ -266,7 +266,7 @@ Dicas:
 ```dcs
 command("coins") {
   set("coins", get("coins", 0, scope: user) + 1, scope: user)
-  reply "Moedas: " + get("coins", scope: user)
+  reply "Coins: " + get("coins", scope: user)
 }
 ```
 

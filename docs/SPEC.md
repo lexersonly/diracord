@@ -26,8 +26,8 @@ multiusuário. A hospedagem é só uma meta de projeto (ver ARCHITECTURE.md).
 
 1. Palavras-chave em **inglês**, curtas.
 2. Blocos com **chaves `{ }`**, como JS/TS. Sem indentação significativa.
-3. Parênteses são **opcionais** em chamadas simples: `reply "oi"` e `reply("oi")` são iguais.
-4. Texto interpola variáveis com `$`: `"Oi $user.name"`.
+3. Parênteses são **opcionais** em chamadas simples: `reply "hi"` e `reply("hi")` são iguais.
+4. Texto interpola variáveis com `$`: `"Hi $user.name"`.
 5. Tipos só existem nos **argumentos de comando** e (opcionais) nos **argumentos de `fn`**. O resto é dinâmico.
 6. Extensões de arquivo aceitas: `.dcs`, `.dira`, `.diracord`.
 7. Comentários com `//`.
@@ -44,7 +44,7 @@ command("ping") {
 
 command("ban", user: member, reason: text = "no reason") {
   ban user reason
-  reply "$user.name foi banido. Motivo: $reason"
+  reply "$user.name was banned. Reason: $reason"
 }
 ```
 
@@ -56,7 +56,7 @@ Nome do evento direto, sem palavra-chave:
 
 ```
 memberJoin {
-  send channel("welcome") "Bem-vindo, $user.mention!"
+  send channel("welcome") "Welcome, $user.mention!"
 }
 ```
 
@@ -65,7 +65,7 @@ O código do clique fica **separado do botão**, ligado por **id** (estilo aoi.j
 
 ```
 button("confirm") {
-  reply "Confirmado!"
+  reply "Confirmed!"
 }
 ```
 
@@ -86,8 +86,8 @@ A pessoa escolhe e combina os escopos que quiser.
 if x > 5 { ... } else if x > 2 { ... } else { ... }
 for item in list { ... }
 while cond { ... }
-chain x { 1 => reply "um"   "a" => reply "letra"   _ => reply "outro" }
-testing { ban user } catch err { reply "Falhou: $err" }
+chain x { 1 => reply "one"   "a" => reply "letter"   _ => reply "other" }
+testing { ban user } catch err { reply "Failed: $err" }
 ```
 - `chain` é o nome escolhido para o "switch/match".
 - Tratamento de erro (decidido em 2026-11-11): `testing { } catch err { }`. Escrever `try`
@@ -95,7 +95,7 @@ testing { ban user } catch err { reply "Falhou: $err" }
 - Também existem `return`, `stop` (encerra o comando), `break` e `continue`.
 
 ### 4.6 Respostas, embeds e Components v2
-- Embed como objeto estilo JSON: `reply { title: "Oi", color: "red" }`.
+- Embed como objeto estilo JSON: `reply { title: "Hi", color: "red" }`.
 - Components v2 (decidido em 2026-11-11, revisto no mesmo dia, ver `docs/rfcs/components-v2.md`):
   **peças no estilo do discord.js**, cada uma é uma função que devolve um valor e você
   coloca uma dentro da outra. A forma objeto `{ layout: [...] }` também é aceita.

@@ -9,7 +9,7 @@ use diracord_diagnostics::{codes, Diagnostic, Fix, Span};
 use diracord_lexer::{StrPart, Token, TokenKind};
 
 impl Parser<'_> {
-    /// An expression, or a call without parentheses (`reply "oi"`).
+    /// An expression, or a call without parentheses (`reply "hi"`).
     /// Used at statement start and after `local x =`, `x =`, `return`.
     pub(crate) fn expr_or_bare(&mut self) -> PResult<Expr> {
         if self.at_plain_ident() {
@@ -357,7 +357,7 @@ impl Parser<'_> {
                         format!("Faltou `:` depois do campo `{}`", key.name),
                     )
                     .with_label(span, "esperava `:`")
-                    .with_help(format!("exemplo: {{ {}: \"valor\" }}", key.name)),
+                    .with_help(format!("exemplo: {{ {}: \"value\" }}", key.name)),
                 );
             }
             let value = self.expr(true)?;

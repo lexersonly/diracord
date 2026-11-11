@@ -79,7 +79,7 @@ codes! {
         "Dentro de texto só valem os escapes \\n, \\t, \\\", \\\\ e \\$.";
     /// `$` inside a string not followed by a name.
     E0005 = 5, "variável vazia no texto",
-        "Um $ dentro do texto precisa de um nome logo depois, como \"Oi $user.name\". Para escrever o símbolo, use \\$.";
+        "Um $ dentro do texto precisa de um nome logo depois, como \"Hi $user.name\". Para escrever o símbolo, use \\$.";
 
     // ---- parser / static checks ----
     /// The parser found a token it did not expect.

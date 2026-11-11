@@ -1,7 +1,7 @@
 //! `join` — Junta os itens de uma lista em um texto.
 //!
 //! ```text
-//! reply join(nomes, ", ")
+//! reply join(names, ", ")
 //! ```
 
 use crate::{Bound, Category, Effect, FnError, FunctionSpec, ParamKind, ParamSpec};
@@ -19,7 +19,7 @@ pub const SPEC: FunctionSpec = FunctionSpec {
     summary: "Junta os itens de uma lista em um texto.",
     params: PARAMS,
     returns: "text",
-    example: "reply join(nomes, \", \")",
+    example: "reply join(names, \", \")",
     call,
 };
 

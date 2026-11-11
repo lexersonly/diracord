@@ -131,7 +131,7 @@ impl Parser<'_> {
                         "No Diracord, o tratamento de erro usa `testing`, não `try`",
                     )
                     .with_label(span, "use `testing`")
-                    .with_help("exemplo: testing { ban user } catch err { reply \"Falhou: $err\" }")
+                    .with_help("exemplo: testing { ban user } catch err { reply \"Failed: $err\" }")
                     .with_fix(Fix::replace(
                         "trocar `try` por `testing`",
                         span,
@@ -334,7 +334,7 @@ impl Parser<'_> {
                 Diagnostic::error(codes::E0100, "Faltou o `catch` depois do `testing`")
                     .with_label(span, "esperava `catch`")
                     .with_help(
-                        "exemplo: testing { ban user } catch err { reply \"Falhou: $err\" }",
+                        "exemplo: testing { ban user } catch err { reply \"Failed: $err\" }",
                     ),
             );
         }
@@ -406,7 +406,7 @@ impl Parser<'_> {
             return self.fail(
                 Diagnostic::error(codes::E0110, "Faltou `=>` no caso do chain")
                     .with_label(span, "esperava `=>`")
-                    .with_help("exemplo: 1 => reply \"um\""),
+                    .with_help("exemplo: 1 => reply \"one\""),
             );
         }
         let body = if self.at(&TokenKind::LBrace) {
@@ -449,7 +449,7 @@ impl Parser<'_> {
                             "O caso do chain não pode ter `$variável` no texto",
                         )
                         .with_label(t.span, "texto com variável")
-                        .with_help("use um valor fixo, como \"sim\", ou compare com if"),
+                        .with_help("use um valor fixo, como \"yes\", ou compare com if"),
                     )
                 }
             },

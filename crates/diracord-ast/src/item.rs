@@ -91,7 +91,7 @@ pub enum ItemKind {
     Event(EventDef),
     /// `button("confirm") { ... }`, `menu(...)`, `modal(...)`
     Interaction(InteractionDef),
-    /// `fn greet(name: text) { return "Oi $name" }`
+    /// `fn greet(name: text) { return "Hi $name" }`
     Function(FunctionDef),
 }
 
