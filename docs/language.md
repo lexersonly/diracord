@@ -138,7 +138,7 @@ Operadores: `+ - * / %`, `== != < <= > >=`, `and`/`&&`, `or`/`||`, `not`/`!`.
 
 ```dcs
 command("ban", user: member) {
-  try {
+  testing {
     ban user
   } catch err {
     reply "Falhou: $err"
@@ -146,7 +146,7 @@ command("ban", user: member) {
 }
 ```
 
-> O nome `try/catch` é provisório (SPEC: `try/catch` ou `testing`, em aberto).
+> Quem vem do JavaScript costuma escrever `try`: o `check` avisa e o `--fix` troca por `testing`.
 
 ## Embeds
 
@@ -277,4 +277,4 @@ Cada execução tem limite de passos, tempo, memória e ações no Discord (veja
 
 ## Ainda em aberto
 
-Funções próprias (`fn`), nome do `try/catch` e alias `guild`. Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).
+Funções próprias (`fn`) e alias `guild`. Ver [SPEC.md §10](SPEC.md) e [rfcs/](rfcs/).

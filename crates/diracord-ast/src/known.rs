@@ -4,10 +4,12 @@
 //! "você quis dizer ...?" suggestions and the docs/`llm.txt` list them.
 
 /// Reserved words. They cannot be used as variable names.
+///
+/// `try` is reserved only so that `try { }` gets a clear "use `testing`" error.
 pub const KEYWORDS: &[&str] = &[
     "command", "button", "menu", "modal", "local", "if", "else", "for", "in", "while", "chain",
-    "try", "catch", "return", "stop", "break", "continue", "true", "false", "null", "and", "or",
-    "not",
+    "testing", "try", "catch", "return", "stop", "break", "continue", "true", "false", "null",
+    "and", "or", "not",
 ];
 
 /// An event the bot can listen to: `memberJoin { ... }`.

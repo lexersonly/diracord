@@ -87,10 +87,11 @@ if x > 5 { ... } else if x > 2 { ... } else { ... }
 for item in list { ... }
 while cond { ... }
 chain x { 1 => reply "um"   "a" => reply "letra"   _ => reply "outro" }
-try { ban user } catch err { reply "Falhou: $err" }
+testing { ban user } catch err { reply "Falhou: $err" }
 ```
 - `chain` é o nome escolhido para o "switch/match".
-- **[ABERTO]** nome final do tratamento de erro: `try/catch` (provisório) ou `testing`.
+- Tratamento de erro (decidido em 2026-11-11): `testing { } catch err { }`. Escrever `try`
+  é erro com correção automática segura para `testing`.
 - Também existem `return`, `stop` (encerra o comando), `break` e `continue`.
 
 ### 4.6 Respostas, embeds e Components v2
@@ -169,6 +170,5 @@ disco). Versão `1` no cabeçalho; arquivos `v0` são atualizados ao abrir.
 Terceiros adicionam funções por **plugins WASM** (isolados e seguros).
 
 ## 10. Decisões em aberto (resumo)
-- Nome do tratamento de erro (`try/catch` vs `testing`).
 - Sintaxe das funções próprias.
 - Alias `guild` para `server`.

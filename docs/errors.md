@@ -140,7 +140,7 @@ Só dá para chamar funções. Talvez falte um operador entre os valores.
 
 ### E0208 — ação no Discord falhou
 
-O Discord recusou a ação (falta de permissão, usuário saiu, etc.). Use try/catch para tratar.
+O Discord recusou a ação (falta de permissão, usuário saiu, etc.). Use testing/catch para tratar.
 
 ### E0209 — campo ou posição não existe
 
@@ -148,7 +148,7 @@ Esse campo (ou posição da lista) não existe nesse valor.
 
 ### E0210 — erro não tratado
 
-Aconteceu um erro e nenhum try/catch o tratou.
+Aconteceu um erro e nenhum testing/catch o tratou.
 
 ### E0211 — aninhamento demais
 

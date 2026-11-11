@@ -122,7 +122,25 @@ impl Parser<'_> {
                 StmtKind::While { cond, body }
             }
             "chain" => self.chain()?,
-            "try" => self.try_stmt()?,
+            "testing" => self.try_stmt()?,
+            "try" => {
+                let span = self.span();
+                self.report(
+                    Diagnostic::error(
+                        codes::E0100,
+                        "No Diracord, o tratamento de erro usa `testing`, não `try`",
+                    )
+                    .with_label(span, "use `testing`")
+                    .with_help("exemplo: testing { ban user } catch err { reply \"Falhou: $err\" }")
+                    .with_fix(Fix::replace(
+                        "trocar `try` por `testing`",
+                        span,
+                        "testing",
+                        true,
+                    )),
+                );
+                self.try_stmt()?
+            }
             "return" => {
                 self.bump();
                 let t = self.peek();
@@ -151,7 +169,7 @@ impl Parser<'_> {
                 let msg = if word == "else" {
                     "`else` sem `if` antes"
                 } else {
-                    "`catch` sem `try` antes"
+                    "`catch` sem `testing` antes"
                 };
                 return self.fail(
                     Diagnostic::error(codes::E0100, msg)
@@ -308,14 +326,16 @@ impl Parser<'_> {
     }
 
     fn try_stmt(&mut self) -> PResult<StmtKind> {
-        self.bump(); // try
+        self.bump(); // testing (or `try`, already reported)
         let body = self.block()?;
         if !self.at_word("catch") {
             let span = self.span();
             return self.fail(
-                Diagnostic::error(codes::E0100, "Faltou o `catch` depois do `try`")
+                Diagnostic::error(codes::E0100, "Faltou o `catch` depois do `testing`")
                     .with_label(span, "esperava `catch`")
-                    .with_help("exemplo: try { ban user } catch err { reply \"Falhou: $err\" }"),
+                    .with_help(
+                        "exemplo: testing { ban user } catch err { reply \"Falhou: $err\" }",
+                    ),
             );
         }
         self.bump();
@@ -325,7 +345,7 @@ impl Parser<'_> {
             Some(self.ident("o nome do erro")?)
         };
         let handler = self.block()?;
-        Ok(StmtKind::Try {
+        Ok(StmtKind::Testing {
             body,
             catch_var,
             handler,

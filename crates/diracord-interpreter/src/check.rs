@@ -187,7 +187,7 @@ impl Checker<'_> {
                     self.block(&a.body);
                 }
             }
-            StmtKind::Try {
+            StmtKind::Testing {
                 body,
                 catch_var,
                 handler,

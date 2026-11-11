@@ -6,7 +6,7 @@ discord.js, **mais completa** (variáveis, condições, laços, erros tratáveis
 
 ```dcs
 command("ban", user: member, reason: text = "sem motivo") {
-  try {
+  testing {
     ban user reason
     reply "$user.name foi banido. Motivo: $reason"
   } catch err {

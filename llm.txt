@@ -43,7 +43,7 @@ intents = ["guilds", "guildMessages", "messageContent", "guildMembers"]
 
 - Comentário: `//` até o fim da linha. Não existe comentário de bloco.
 - Nomes: letra ou `_`, depois letras, dígitos ou `_`. Diferencia maiúsculas: `memberJoin` ≠ `memberjoin`.
-- Palavras reservadas: command button menu modal local if else for in while chain try catch
+- Palavras reservadas: command button menu modal local if else for in while chain testing catch
   return stop break continue true false null and or not
 - Números: `15`, `1.5`, `1_000`. Ids do Discord são TEXTO: `"123456789012345678"`.
 - Texto: só aspas duplas `"..."`, numa linha. Escapes: `\n \t \" \\ \$`.
@@ -69,7 +69,7 @@ stmt        = "local" NAME "=" value
             | "for" NAME "in" cond block
             | "while" cond block
             | "chain" cond "{" { arm [ "," ] } "}"
-            | "try" block "catch" [ NAME ] block
+            | "testing" block "catch" [ NAME ] block
             | "return" [ value ]
             | "stop" | "break" | "continue"
             | value ;
@@ -130,7 +130,7 @@ element     = ELEMENT ( "(" [ arg { "," arg } ] ")" | { arg [ "," ] } ) [ lblock
   Para intervalos: `for i in range(1, 6)` (1..5).
 - `chain x { 1 => reply "um"  "a" => reply "letra"  _ => reply "outro" }`: o primeiro caso igual
   ganha; `_` = qualquer outro e deve ser o último. Não há "fall-through".
-- `try { ... } catch err { ... }`: `err` é o TEXTO da mensagem de erro. Erros de limite
+- `testing { ... } catch err { ... }`: `err` é o TEXTO da mensagem de erro. Erros de limite
   (tempo, passos, memória, ações) NÃO podem ser pegos.
 - `stop` encerra o comando/evento. `return valor` também encerra. `break`/`continue` só em laços.
 - Embeds: `reply { title: "Oi", description: "...", color: "red", footer: "rodapé",
@@ -176,7 +176,7 @@ Componentes (argumentos na ordem; todos também por nome; `?` = opcional):
   Com `url:` é botão de link e não tem id. Sem url, o id liga ao `button("id") { ... }` do topo do arquivo.
 - `menu(id, options, placeholder?, min?, max?)` — options: lista de textos ou { label, value, description }.
   O clique roda `menu("id") { ... }`; os escolhidos ficam em `message.values`.
-Dentro do layout também valem `local`, `if` e `for`. Não valem reply/send/while/chain/try.
+Dentro do layout também valem `local`, `if` e `for`. Não valem reply/send/while/chain/testing.
 Limites do Discord: 40 componentes por mensagem. Layout não se mistura com embed nem com texto solto.
 
 ## 5. Variáveis automáticas
@@ -337,6 +337,7 @@ E0504 motor não encontrado
 ## 11. Erros comuns (errado → certo)
 
 - `let x = 1` / `var x = 1` → `local x = 1` (E0100, corrigido por --fix)
+- `try { } catch err { }` → `testing { } catch err { }` (E0100, corrigido por --fix)
 - `if x = 1 { }` → `if x == 1 { }` (E0100, corrigido por --fix)
 - `x = 1` sem criar antes → `local x = 1` (E0200, corrigido por --fix)
 - `rpely "oi"` → `reply "oi"` (E0201, com sugestão)
@@ -372,7 +373,7 @@ command("ping") {
 }
 
 command("ban", user: member, reason: text = "sem motivo") {
-  try {
+  testing {
     ban user reason
     reply "$user.name foi banido. Motivo: $reason"
   } catch err {
@@ -411,6 +412,5 @@ button("confirm") {
 ## 13. Ainda NÃO existe (decisões em aberto na SPEC — não use)
 
 - Funções próprias (`fn nome(...) { }`): sintaxe em aberto.
-- Nome final de try/catch (`try/catch` é provisório; pode virar `testing`).
 - Alias `guild` para `server`.
 - Plugins WASM.

@@ -147,7 +147,7 @@ fn stop_and_return() {
 
 #[test]
 fn try_catch_handles_host_failure() {
-    let src = "command(\"t\") { try { ban user } catch err { reply \"Falhou: $err\" } }";
+    let src = "command(\"t\") { testing { ban user } catch err { reply \"Falhou: $err\" } }";
     let mut host = TestHost::new().fail_on("ban", "sem permissão");
     run(
         &engine(src),
@@ -398,7 +398,7 @@ fn memory_limit() {
 
 #[test]
 fn limits_cannot_be_caught() {
-    let src = "command(\"t\") { try { while true { } } catch { reply \"pego\" } }";
+    let src = "command(\"t\") { testing { while true { } } catch { reply \"pego\" } }";
     let mut host = TestHost::new();
     assert!(run(
         &engine(src),

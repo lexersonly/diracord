@@ -70,8 +70,8 @@ pub enum StmtKind {
         /// Arms in order; the first match wins.
         arms: Vec<ChainArm>,
     },
-    /// `try { } catch err { }` (keyword name is provisional, see SPEC `[ABERTO]`).
-    Try {
+    /// `testing { } catch err { }` — error handling.
+    Testing {
         /// Protected block.
         body: Block,
         /// Name bound to the error message, if written.

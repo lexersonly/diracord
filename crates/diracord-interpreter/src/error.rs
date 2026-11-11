@@ -11,7 +11,7 @@ pub struct RuntimeError {
     pub diagnostic: Box<Diagnostic>,
     /// Which file of the project the spans refer to.
     pub file: FileId,
-    /// `false` for limit errors, which `try/catch` cannot catch.
+    /// `false` for limit errors, which `testing`/`catch` cannot catch.
     pub catchable: bool,
 }
 

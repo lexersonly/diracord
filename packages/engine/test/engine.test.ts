@@ -41,9 +41,9 @@ test("ping runs end to end", async () => {
   assert.deepEqual(seen, [{ name: "reply", args: ["Pong!"], options: {} }]);
 });
 
-test("host failures reach try/catch, concurrent dispatches are queued", async () => {
+test("host failures reach testing/catch, concurrent dispatches are queued", async () => {
   await engine.load([
-    { path: "b.dcs", source: 'command("b", u: member) { try { ban u } catch err { reply "Falhou: $err" } }' },
+    { path: "b.dcs", source: 'command("b", u: member) { testing { ban u } catch err { reply "Falhou: $err" } }' },
   ]);
   const replies: unknown[] = [];
   const onAction = async (a: Action) => {

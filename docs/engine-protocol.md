@@ -77,7 +77,7 @@ e espera a resposta com o mesmo `id` e `seq`:
 {"op":"result","id":1,"seq":1,"ok":true,"value":null}
 {"op":"result","id":1,"seq":1,"ok":false,"error":"Missing Permissions"}
 ```
-Um `ok:false` vira um erro `E0208` que o código pode tratar com `try/catch`.
+Um `ok:false` vira um erro `E0208` que o código pode tratar com `testing { } catch err { }`.
 
 No fim:
 ```json

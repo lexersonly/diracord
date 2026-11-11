@@ -137,12 +137,12 @@ fn sx_stmt(s: &Stmt) -> String {
                 .collect();
             format!("(chain {} {})", sx(subject), a.join(" "))
         }
-        StmtKind::Try {
+        StmtKind::Testing {
             body,
             catch_var,
             handler,
         } => format!(
-            "(try {} {} {})",
+            "(testing {} {} {})",
             sx_block(body),
             catch_var.as_ref().map(|c| c.name.as_str()).unwrap_or("_"),
             sx_block(handler)
@@ -302,12 +302,15 @@ fn chain_on_one_line() {
 }
 
 #[test]
-fn try_catch() {
+fn testing_catch() {
     assert_eq!(
-        body("try { ban user } catch err { reply \"Falhou: $err\" }"),
-        "(try {(ban user)} err {(reply (tpl \"Falhou: \" err))})"
+        body("testing { ban user } catch err { reply \"Falhou: $err\" }"),
+        "(testing {(ban user)} err {(reply (tpl \"Falhou: \" err))})"
     );
-    assert_eq!(body("try { x() } catch { stop }"), "(try {(x)} _ {stop})");
+    assert_eq!(
+        body("testing { x() } catch { stop }"),
+        "(testing {(x)} _ {stop})"
+    );
 }
 
 #[test]
@@ -527,4 +530,25 @@ fn layout_placement_errors() {
     );
     let out = parse(&wrap("txet \"a\""), &ParseOptions::default());
     assert!(out.diagnostics[0].help.iter().any(|h| h.contains("`text`")));
+}
+
+#[test]
+fn try_is_an_error_with_a_safe_fix() {
+    let src = "command(\"a\") {\n  try { ban user } catch err { stop }\n}";
+    let out = parse(src, &ParseOptions::default());
+    assert_eq!(out.diagnostics.len(), 1);
+    assert_eq!(out.diagnostics[0].code, codes::E0100);
+    let fixed = apply_fixes(src, &out.diagnostics[0].fixes).unwrap();
+    assert_eq!(
+        fixed,
+        "command(\"a\") {\n  testing { ban user } catch err { stop }\n}"
+    );
+    assert!(parse(&fixed, &ParseOptions::default())
+        .diagnostics
+        .is_empty());
+    // The tree is still built, so the rest of the file is checked too.
+    let ItemKind::Command(c) = &out.program.items[0].kind else {
+        panic!()
+    };
+    assert!(matches!(c.body.stmts[0].kind, StmtKind::Testing { .. }));
 }

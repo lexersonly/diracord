@@ -99,7 +99,7 @@ impl<'r> Machine<'r> {
                     }
                 }
             }
-            StmtKind::Try {
+            StmtKind::Testing {
                 body,
                 catch_var,
                 handler,

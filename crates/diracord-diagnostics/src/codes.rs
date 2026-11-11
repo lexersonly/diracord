@@ -167,13 +167,13 @@ codes! {
         "Só dá para chamar funções. Talvez falte um operador entre os valores.";
     /// The host (Discord side) failed to perform an action.
     E0208 = 208, "ação no Discord falhou",
-        "O Discord recusou a ação (falta de permissão, usuário saiu, etc.). Use try/catch para tratar.";
+        "O Discord recusou a ação (falta de permissão, usuário saiu, etc.). Use testing/catch para tratar.";
     /// A field or index that does not exist.
     E0209 = 209, "campo ou posição não existe",
         "Esse campo (ou posição da lista) não existe nesse valor.";
     /// An error that nobody caught.
     E0210 = 210, "erro não tratado",
-        "Aconteceu um erro e nenhum try/catch o tratou.";
+        "Aconteceu um erro e nenhum testing/catch o tratou.";
     /// Too much nesting.
     E0211 = 211, "aninhamento demais",
         "O código entrou em blocos demais um dentro do outro.";

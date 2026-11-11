@@ -28,7 +28,7 @@
 //!
 //! Every run is bounded by [`Limits`]: steps, CPU time (time spent waiting on
 //! the host does not count), memory held in variables, nesting and number of
-//! host actions. Hitting a limit stops the run and cannot be caught by `try`.
+//! host actions. Hitting a limit stops the run and cannot be caught by `testing`/`catch`.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]

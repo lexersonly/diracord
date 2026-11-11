@@ -263,7 +263,7 @@ impl<'r> Machine<'r> {
                         span,
                         "esta ação falhou",
                     )
-                    .with_help("use try { ... } catch err { ... } para tratar")
+                    .with_help("use testing { ... } catch err { ... } para tratar")
                 })
             }
             Effect::Data(op) => self.data(op, span),
