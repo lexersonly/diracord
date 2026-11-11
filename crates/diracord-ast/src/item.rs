@@ -1,7 +1,7 @@
 //! Top-level items: commands, events and interactions.
 
 use crate::{Block, Expr, Ident};
-use diracord_diagnostics::{Span, Spanned};
+use diracord_diagnostics::{FileId, Span, Spanned};
 use std::fmt;
 
 /// One parsed source file.
@@ -44,14 +44,19 @@ impl Program {
     }
 
     /// Merges several files' programs (a project is many files).
-    pub fn merge(programs: impl IntoIterator<Item = Program>) -> Program {
+    ///
+    /// Each item is stamped with the [`FileId`] given next to its program, so
+    /// errors can point at the right file. The merged `span` is meaningless
+    /// across files and is left as the default.
+    pub fn merge(programs: impl IntoIterator<Item = (FileId, Program)>) -> Program {
         let mut items = Vec::new();
-        let mut span = Span::default();
-        for p in programs {
-            span = span.to(p.span);
-            items.extend(p.items);
+        for (file, p) in programs {
+            items.extend(p.items.into_iter().map(|mut i| {
+                i.file = file;
+                i
+            }));
         }
-        Program { items, span }
+        Program { items, span: Span::default() }
     }
 }
 
@@ -62,6 +67,8 @@ pub struct Item {
     pub kind: ItemKind,
     /// The whole item, header and body.
     pub span: Span,
+    /// Which file of the project it came from (the parser sets `FileId(0)`).
+    pub file: FileId,
 }
 
 /// The kinds of top-level items.
@@ -236,13 +243,14 @@ mod tests {
                 body: body.clone(),
             }),
             span: Span::new(s, s + 12),
+            file: FileId::default(),
         };
         let a = Program { items: vec![cmd("ping", 0)], span: Span::new(0, 12) };
         let b = Program { items: vec![cmd("pong", 0)], span: Span::new(0, 20) };
-        let p = Program::merge([a, b]);
+        let p = Program::merge([(FileId(0), a), (FileId(1), b)]);
         assert_eq!(p.commands().count(), 2);
         assert!(p.command("pong").is_some());
         assert!(p.command("nope").is_none());
-        assert_eq!(p.span, Span::new(0, 20));
+        assert_eq!(p.items[1].file, FileId(1));
     }
 }

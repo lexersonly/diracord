@@ -62,6 +62,12 @@ impl fmt::Debug for Span {
     }
 }
 
+/// Identifies a source file inside a project (index into the project's file list).
+///
+/// Single-file tools can use `FileId::default()` (file 0).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
+pub struct FileId(pub u32);
+
 /// A value together with the span it came from.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Spanned<T> {

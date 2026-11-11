@@ -25,7 +25,7 @@ mod item;
 pub mod known;
 mod stmt;
 
-pub use diracord_diagnostics::Span;
+pub use diracord_diagnostics::{FileId, Span};
 pub use expr::{Arg, BinaryOp, CallStyle, Expr, ExprKind, Literal, ObjectField, TemplatePart, UnaryOp};
 pub use ident::Ident;
 pub use item::{ArgType, CommandDef, EventDef, InteractionDef, InteractionKind, Item, ItemKind, Param, Program};

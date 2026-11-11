@@ -38,5 +38,5 @@ pub use diagnostic::{Diagnostic, Label, Severity};
 pub use fix::{apply_fixes, Edit, Fix, FixError};
 pub use render::{render, render_all};
 pub use source::{LineCol, SourceFile};
-pub use span::{Span, Spanned};
+pub use span::{FileId, Span, Spanned};
 pub use suggest::{did_you_mean, edit_distance};
