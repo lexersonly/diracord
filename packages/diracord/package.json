@@ -1,6 +1,6 @@
 {
   "name": "diracord",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Diracord: crie bots de Discord com uma linguagem simples. O pacote publicado \u00e9 montado por scripts/pack-npm.mjs.",
   "license": "MIT",

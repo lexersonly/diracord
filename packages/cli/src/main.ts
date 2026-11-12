@@ -50,7 +50,7 @@ export async function main(argv: string[]): Promise<number> {
         return 0;
       case "--version":
       case "-V":
-        out("diracord 0.1.0");
+        out("diracord 0.1.1");
         return 0;
       default:
         out(`comando desconhecido: ${cmd}\n`);
