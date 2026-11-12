@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { groups } from "@/lib/docs-nav";
+import { sections, type SectionId } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+export function Sidebar({ section }: { section: SectionId }) {
   const pathname = usePathname();
   return (
     <nav className="space-y-8 text-sm">
-      {groups.map((g) => (
+      {sections[section].groups.map((g) => (
         <div key={g.title} className="space-y-2">
           <p className="px-3 text-xs font-medium uppercase tracking-wider text-white/40">{g.title}</p>
           <ul className="space-y-0.5">
             {g.pages.map((p) => {
-              const href = `/docs/${p.slug}`;
+              const href = `/${section}/${p.slug}`;
               const active = pathname === href;
               return (
                 <li key={p.slug}>
@@ -22,6 +22,7 @@ export function Sidebar() {
                     href={href}
                     className={cn(
                       "block rounded-lg px-3 py-1.5 transition-colors",
+                      section === "components" && g.title !== "Começar" && "font-mono text-[13px]",
                       active ? "bg-white/[0.07] text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >

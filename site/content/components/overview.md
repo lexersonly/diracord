@@ -2,6 +2,10 @@ O Components v2 do Discord monta mensagens com caixas, textos, imagens, botões 
 
 ## O primeiro exemplo
 
+```preview
+{"messages": [{"from": "user", "text": "!rules"}, {"from": "bot", "layout": [{"container": [{"text": "## Welcome, Ana"}, {"section": ["Read the rules before you continue."], "thumbnail": "x"}, {"separator": true, "spacing": "large"}, {"row": [{"button": "accept", "label": "Accept", "style": "success"}, {"button": "decline", "label": "Decline", "style": "danger"}]}], "color": "purple"}]}]}
+```
+
 ```dcs
 command("rules") {
   reply container(
@@ -26,22 +30,24 @@ button("decline") {
 }
 ```
 
-Lendo de fora para dentro: uma **caixa roxa** (`container`) com um **título** (`text`), um texto com a **foto** ao lado (`section`), uma **linha** (`separator`) e uma **fileira de botões** (`row`). O clique de cada botão roda o `button("id") { }` com o mesmo id.
+Lendo de fora para dentro: uma **caixa roxa** ([`container`](/components/container)) com um **título** ([`text`](/components/text)), um texto com a **foto** ao lado ([`section`](/components/section)), uma **linha** ([`separator`](/components/separator)) e uma **fileira de botões** ([`row`](/components/row) com [`button`](/components/button)). O clique de cada botão roda o `button("id") { }` com o mesmo id.
 
-## As peças
+## Todas as peças
 
-| peça | vai onde | o que recebe |
+| peça | para quê | vai onde |
 |---|---|---|
-| `container(peças..., color?, spoiler?)` | na mensagem | text, section, row, separator, gallery, file |
-| `text(conteúdo)` | mensagem ou container | markdown (`## título`, `**negrito**`) |
-| `section(textos..., thumbnail: ou button:)` | mensagem ou container | 1 a 3 textos + **um** acessório |
-| `row(peças...)` | mensagem ou container | até 5 botões, **ou** um menu |
-| `button(id, label, style?, emoji?, disabled?, url?)` | `row` ou `section(button: ...)` | style: primary, secondary, success, danger |
-| `menu(id, opções, placeholder?, min?, max?)` | `row` | lista de textos ou `{ label, value }` |
-| `thumbnail(url, description?, spoiler?)` | `section(thumbnail: ...)` | ou passe só a url |
-| `separator(spacing?, line?)` | mensagem ou container | spacing: "small" ou "large" |
-| `gallery(urls...)` | mensagem ou container | 1 a 10 imagens |
-| `file(url, spoiler?)` | mensagem ou container | "attachment://nome" |
+| [`container`](/components/container) | caixa com cor que agrupa peças | na mensagem |
+| [`section`](/components/section) | texto + imagem pequena ou botão ao lado | mensagem ou container |
+| [`row`](/components/row) | linha de botões, ou um menu | mensagem ou container |
+| [`separator`](/components/separator) | espaço ou linha | mensagem ou container |
+| [`text`](/components/text) | texto com markdown | mensagem ou container |
+| [`thumbnail`](/components/thumbnail) | imagem pequena | `section(thumbnail: ...)` |
+| [`gallery`](/components/gallery) | 1 a 10 imagens grandes | mensagem ou container |
+| [`file`](/components/file) | arquivo anexado | mensagem ou container |
+| [`button`](/components/button) | botão de ação ou de link | `row` ou `section(button: ...)` |
+| [`menu`](/components/menu) | menu de opções | `row` |
+
+O cartão clássico (título, descrição, campos) continua existindo: veja [Embed](/components/embed).
 
 ## O que mandar no reply
 
@@ -56,6 +62,10 @@ O layout não se mistura com texto solto nem com embed na mesma mensagem: para t
 ## Peças são valores
 
 Dá para guardar peças em variáveis e montar com `if` e `for`:
+
+```preview
+{"messages": [{"from": "user", "text": "!colors"}, {"from": "bot", "layout": [{"text": "Pick a color:"}, {"row": [{"menu": "color", "options": ["Blue", "Green", "Purple"], "placeholder": "Click here"}]}, {"text": "-# there are 3 options"}]}]}
+```
 
 ```dcs
 command("colors") {
@@ -72,19 +82,6 @@ menu("color") {
 }
 ```
 
-## Botões de link
-
-Com `url:`, o botão abre um endereço e não tem id (não precisa de `button("id") { }`):
-
-```dcs
-command("links") {
-  reply row(
-    button(label: "Website", url: "https://example.com"),
-    button(label: "Support", url: "https://discord.gg/example", emoji: "💬")
-  )
-}
-```
-
 ## Quando algo está no lugar errado
 
 A seta aponta para a peça errada e a ajuda diz onde ela vai:
@@ -98,13 +95,6 @@ erro[E0117]: `button(...)` não pode ficar dentro de `container(...)`
   |
   = ajuda: `button` vai dentro de `row(...)` (ou como `button:` de uma `section(...)`)
 ```
-
-Erros comuns:
-
-- botão solto no container → coloque dentro de `row(...)`;
-- `section("texto")` sem acessório → adicione `thumbnail: url` ou `button: button(...)`;
-- texto solto no container (`container("hi")`) → use `container(text("hi"))`;
-- mais de 5 botões numa `row` → divida em duas `row`.
 
 ## A forma objeto
 

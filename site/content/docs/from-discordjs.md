@@ -38,6 +38,10 @@ await interaction.reply({ components: [container], flags: MessageFlags.IsCompone
 
 Diracord:
 
+```preview
+{"messages": [{"from": "bot", "command": "/welcome", "layout": [{"container": [{"text": "## Welcome"}, {"row": [{"button": "accept", "label": "Accept", "style": "success"}]}], "color": "purple"}]}]}
+```
+
 ```dcs
 command("welcome") {
   reply container(

@@ -2,6 +2,10 @@ Para não repetir código, crie suas próprias funções com `fn`, no topo de qu
 
 ## Criando e chamando
 
+```preview
+{"messages": [{"from": "user", "text": "!daily"}, {"from": "bot", "text": "Hi Ana! You have 100 coins."}]}
+```
+
 ```dcs
 fn giveCoins(who: member, amount: number = 1) {
   local total = get("coins", 0, scope: user) + amount
@@ -58,6 +62,10 @@ command("shop") {
 - `return valor` devolve o resultado. Sem `return`, a função devolve `null`.
 - `stop` dentro de uma função encerra **o comando inteiro**. É útil para checagens:
 
+```preview
+{"messages": [{"from": "user", "text": "!clear-warnings @Joe"}, {"from": "bot", "text": "Only moderators can do that."}]}
+```
+
 ```dcs
 fn requireMod() {
   if not hasRole(user, "Moderator") {
@@ -76,6 +84,10 @@ command("clear-warnings", target: member) {
 ## Recursão
 
 Uma função pode chamar ela mesma, até 64 chamadas uma dentro da outra. Passar disso é o erro E0211 (para não travar o bot).
+
+```preview
+{"messages": [{"from": "user", "text": "!fact 5"}, {"from": "bot", "text": "120"}]}
+```
 
 ```dcs
 fn fact(n: number) {

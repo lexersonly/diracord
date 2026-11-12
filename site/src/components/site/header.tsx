@@ -4,11 +4,10 @@ import { site } from "@/lib/site";
 import { Logo } from "./logo";
 
 const NAV = [
-  { href: "/docs/getting-started", label: "Começar" },
-  { href: "/docs/why", label: "Por que Diracord" },
-  { href: "/docs/syntax", label: "Sintaxe" },
-  { href: "/docs/components-v2", label: "Components v2" },
   { href: "/docs", label: "Docs" },
+  { href: "/components", label: "Componentes" },
+  { href: "/docs/tips", label: "Comandos prontos" },
+  { href: "/docs/why", label: "Por que Diracord" },
 ];
 
 export function Header() {
@@ -31,10 +30,18 @@ export function Header() {
             GitHub
           </ButtonLink>
           <ButtonLink href="/docs/getting-started" size="sm">
-            Criar um bot
+            Começar
           </ButtonLink>
         </div>
       </div>
+      {/* Small screens: the same links in a row that scrolls sideways. */}
+      <nav className="scrollbar-hide flex gap-5 overflow-x-auto border-t border-white/[0.06] px-4 py-2.5 text-[13px] text-muted-foreground md:hidden">
+        {NAV.map((n) => (
+          <Link key={n.href} href={n.href} className="whitespace-nowrap hover:text-foreground">
+            {n.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

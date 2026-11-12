@@ -10,6 +10,10 @@ command("ping") {
 
 Com argumentos. Os tipos são `text`, `number`, `bool`, `member`, `user`, `channel` e `role`. Argumento com `= valor` é opcional e fica no fim:
 
+```preview
+{"messages": [{"from": "user", "text": "!ban @Joe link spam"}, {"from": "bot", "text": "Joe was banned. Reason: link spam"}, {"from": "bot", "command": "/ban user: @Joe", "text": "Joe was banned. Reason: no reason"}]}
+```
+
 ```dcs
 command("ban", user: member, reason: text = "no reason") {
   ban user reason
@@ -45,6 +49,10 @@ Vários arquivos podem ouvir o mesmo evento: todos rodam.
 
 O código do clique fica separado, ligado pelo **id**:
 
+```preview
+{"messages": [{"from": "bot", "layout": [{"row": [{"button": "confirm", "label": "Confirm", "style": "success"}]}]}, {"from": "bot", "text": "Confirmed!", "ephemeral": true}]}
+```
+
 ```dcs
 button("confirm") {
   reply "Confirmed!" ephemeral: true
@@ -55,7 +63,7 @@ menu("color") {
 }
 ```
 
-Para criar os botões na mensagem, veja [Components v2](/docs/components-v2).
+Para criar os botões na mensagem, veja [Components v2](/components/overview).
 
 ## Chamadas com e sem parênteses
 
@@ -79,6 +87,10 @@ Argumentos podem ser passados pelo nome: `get("coins", 0, scope: user)`.
 ## Texto
 
 Texto usa aspas duplas e aceita variáveis com `$`:
+
+```preview
+{"messages": [{"from": "user", "text": "!hi"}, {"from": "bot", "text": "Hi Ana, you have 3 warnings. It costs $5."}]}
+```
 
 ```dcs
 command("hi") {
@@ -108,6 +120,10 @@ command("math") {
 - Tipos: `null`, `true`/`false`, números, texto, listas `[ ]` e objetos `{ }`.
 
 ## Condições, laços e chain
+
+```preview
+{"messages": [{"from": "user", "text": "!size 2"}, {"from": "bot", "text": "small"}, {"from": "bot", "text": "1"}, {"from": "bot", "text": "3"}, {"from": "bot", "text": "two"}]}
+```
 
 ```dcs
 command("size", n: number) {
@@ -146,6 +162,10 @@ Operadores: `+ - * / %`, `== != < <= > >=`, `and`/`&&`, `or`/`||`, `not`/`!`.
 
 ## Erros tratáveis
 
+```preview
+{"messages": [{"from": "user", "text": "!kick @Admin"}, {"from": "bot", "text": "Failed: O Discord recusou `kick`: Missing Permissions"}]}
+```
+
 ```dcs
 command("kick", target: member) {
   testing {
@@ -160,6 +180,10 @@ command("kick", target: member) {
 `err` é o texto do erro. Erros de limite (tempo, passos, memória, ações) **não** podem ser pegos: eles param o comando de propósito.
 
 ## Embeds
+
+```preview
+{"messages": [{"from": "user", "text": "!profile"}, {"from": "bot", "embed": {"title": "Profile of Ana", "description": "Member since 2024-03-10T18:22:05+00:00", "color": "blurple", "fields": [{"name": "Coins", "value": "120", "inline": true}], "footer": "Diracord"}}]}
+```
 
 ```dcs
 command("profile") {

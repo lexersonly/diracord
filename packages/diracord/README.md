@@ -15,7 +15,7 @@ Mais fácil que aoi.js, com erros que dizem exatamente o que corrigir.
 [![motor em Rust](https://img.shields.io/badge/motor-Rust-black?style=flat-square&logo=rust)](https://github.com/lexersonly/diracord)
 [![RAM do motor](https://img.shields.io/badge/RAM_do_motor-~2.5_MB-black?style=flat-square)](https://github.com/lexersonly/diracord)
 
-[**Site**](https://diracord.vercel.app) &nbsp;·&nbsp; [**Começar**](https://diracord.vercel.app/docs/getting-started) &nbsp;·&nbsp; [**Dicas e comandos**](https://diracord.vercel.app/docs/tips) &nbsp;·&nbsp; [**Vindo do aoi.js**](https://diracord.vercel.app/docs/from-aoijs) &nbsp;·&nbsp; [**GitHub**](https://github.com/lexersonly/diracord)
+[**Site**](https://diracord.vercel.app) &nbsp;·&nbsp; [**Começar**](https://diracord.vercel.app/docs/getting-started) &nbsp;·&nbsp; [**Componentes**](https://diracord.vercel.app/components) &nbsp;·&nbsp; [**Vindo do aoi.js**](https://diracord.vercel.app/docs/from-aoijs) &nbsp;·&nbsp; [**GitHub**](https://github.com/lexersonly/diracord)
 
 </div>
 
@@ -131,9 +131,10 @@ uma seta e quase sempre sugere a correção. Os seguros o `check --fix` aplica s
 ## 📚 Documentação
 
 - **[Primeiros passos](https://diracord.vercel.app/docs/getting-started)**: do zero ao bot online
-- **[Dicas e comandos básicos](https://diracord.vercel.app/docs/tips)**: ban, mute, moedas, boas-vindas, cargo por botão
+- **[Comandos prontos](https://diracord.vercel.app/docs/tips)**: ban, mute, moedas, boas-vindas, cargo por botão, com simulação do Discord
+- **[Componentes](https://diracord.vercel.app/components)**: uma página por peça (container, row, button, menu...), com exemplos
 - **[Bugs e erros comuns](https://diracord.vercel.app/docs/mistakes)**: o que costuma dar errado e como evitar
-- **[Sintaxe](https://diracord.vercel.app/docs/syntax)** · **[Funções próprias](https://diracord.vercel.app/docs/functions)** · **[Components v2](https://diracord.vercel.app/docs/components-v2)** · **[Dados salvos](https://diracord.vercel.app/docs/data)**
+- **[Sintaxe](https://diracord.vercel.app/docs/syntax)** · **[Funções próprias](https://diracord.vercel.app/docs/functions)** · **[Dados salvos](https://diracord.vercel.app/docs/data)**
 - **Vindo de outra ferramenta:** [aoi.js](https://diracord.vercel.app/docs/from-aoijs) · [discord.js](https://diracord.vercel.app/docs/from-discordjs)
 - **Referência:** [todas as funções](https://diracord.vercel.app/docs/reference-functions) · [códigos de erro](https://diracord.vercel.app/docs/reference-errors)
 

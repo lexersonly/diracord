@@ -15,4 +15,7 @@ npm run build
   `llm.txt`) para o site; `dev` e `build` já rodam isso.
 - `src/components/motion` e `src/components/agents`: componentes do beUI, como o registro
   publica (fora do lint).
-- Deploy: Vercel, com *Root Directory* = `site`.
+- `content/components/*.md`: a aba Componentes, uma página por peça. Blocos ```preview são
+  simulações do Discord escritas em JSON (JSON inválido quebra o build de propósito).
+- A home usa three.js (`src/components/home/hero-scene.tsx`), carregado só no navegador.
+- Deploy: Vercel (`vercel deploy --prod` de dentro de `site/`).

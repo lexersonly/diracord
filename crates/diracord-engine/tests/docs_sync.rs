@@ -69,7 +69,7 @@ fn llm_txt_lists_every_function_and_code() {
 #[test]
 fn every_dcs_example_in_the_docs_is_valid() {
     let mut files = vec!["llm.txt".to_string(), "README.md".to_string()];
-    for dir in ["docs", "site/content/docs"] {
+    for dir in ["docs", "site/content/docs", "site/content/components"] {
         let Ok(entries) = std::fs::read_dir(root().join(dir)) else {
             continue;
         };

@@ -2,6 +2,10 @@ O Diracord tem um banco de dados embutido, o **Dirabank**: um arquivo só (`data
 
 ## get, set e delete
 
+```preview
+{"messages": [{"from": "user", "text": "!coin"}, {"from": "bot", "text": "You have 1 coins."}, {"from": "user", "text": "!coin"}, {"from": "bot", "text": "You have 2 coins."}, {"from": "user", "text": "!reset"}, {"from": "bot", "text": "Coins reset."}]}
+```
+
 ```dcs
 command("coin") {
   local coins = get("coins", 0, scope: user) + 1
@@ -47,6 +51,10 @@ command("uses") {
 Sem `scope:`, vale o `default_scope` do `diracord.toml` (padrão: `user`). Em mensagem privada não existe servidor: `scope: server` e `scope: member` dão o erro E0402 ali.
 
 > Atenção: `scope: user` e `scope: member` usam **quem rodou o comando**. Para guardar algo de **outra pessoa** (os avisos de quem foi mencionado, por exemplo), coloque o id dela no nome e use `scope: server`:
+
+```preview
+{"messages": [{"from": "user", "text": "!warn @Joe spam", "name": "Mod"}, {"from": "bot", "text": "Joe now has 1 warnings. Reason: spam"}]}
+```
 
 ```dcs
 command("warn", target: member, reason: text = "no reason") {

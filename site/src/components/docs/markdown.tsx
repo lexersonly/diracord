@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Code } from "@/components/site/code";
+import { DiscordPreview, type PreviewData } from "@/components/site/discord-preview";
 
 /** Slug for heading anchors ("Primeiros passos" → "primeiros-passos"). */
 export function slugify(text: string): string {
@@ -72,6 +73,10 @@ const components: Components = {
     const text = String(children ?? "");
     if (!lang && !text.includes("\n")) {
       return <code className="rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.86em] text-foreground">{children}</code>;
+    }
+    if (lang === "preview") {
+      // A simulated Discord conversation, written as JSON. Invalid JSON fails the build on purpose.
+      return <DiscordPreview data={JSON.parse(text) as PreviewData} />;
     }
     return <Code code={text} lang={lang ?? "text"} />;
   },

@@ -8,8 +8,8 @@ const COLUMNS = [
     links: [
       { href: "/docs/getting-started", label: "Começar" },
       { href: "/docs/syntax", label: "Sintaxe" },
-      { href: "/docs/components-v2", label: "Components v2" },
-      { href: "/docs/tips", label: "Dicas e comandos básicos" },
+      { href: "/components", label: "Componentes" },
+      { href: "/docs/tips", label: "Comandos prontos" },
     ],
   },
   {

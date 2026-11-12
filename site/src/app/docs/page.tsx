@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { TiltCard } from "@/components/motion/tilt-card";
 import { Eyebrow } from "@/components/site/section";
-import { groups } from "@/lib/docs-nav";
+import { sections } from "@/lib/nav";
+
+const groups = sections.docs.groups;
 
 export const metadata = { title: "Documentação" };
 

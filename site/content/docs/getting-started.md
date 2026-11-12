@@ -65,6 +65,10 @@ npx diracord watch
 
 Crie `commands/hello.dcs`:
 
+```preview
+{"messages": [{"from": "user", "text": "!hello"}, {"from": "bot", "text": "Hi, friend!"}, {"from": "user", "text": "!hello Joe"}, {"from": "bot", "text": "Hi, Joe!"}, {"from": "bot", "command": "/hello name: Joe", "text": "Hi, Joe!"}]}
+```
+
 ```dcs
 command("hello", name: text = "friend") {
   reply "Hi, $name!"

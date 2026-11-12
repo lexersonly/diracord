@@ -53,6 +53,10 @@ Todo erro tem um código estável (`E0201`) para pesquisar, mostra o arquivo e a
 
 Em aoi.js, uma condição dentro de uma ação dentro de uma mensagem vira funções `$` aninhadas numa string. Em Diracord, é o que parece:
 
+```preview
+{"messages": [{"from": "user", "text": "!daily"}, {"from": "bot", "text": "You got 100 coins!"}, {"from": "user", "text": "!daily"}, {"from": "bot", "text": "Come back tomorrow!"}]}
+```
+
 ```dcs
 command("daily") {
   local last = get("daily", 0, scope: user)
