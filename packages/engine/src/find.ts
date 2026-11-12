@@ -3,7 +3,7 @@
  * @module
  */
 
-import { existsSync, statSync } from "node:fs";
+import { accessSync, chmodSync, constants, existsSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -12,6 +12,7 @@ const EXE = process.platform === "win32" ? "diracord-engine.exe" : "diracord-eng
 /**
  * Where the engine binary is, in this order:
  * 1. `DIRACORD_ENGINE` environment variable;
+ * 1b. the binary shipped in the npm package: `bin/<platform>-<arch>/`;
  * 2. `target/release` or `target/debug` in this repository or a parent of `from`
  *    (the most recently built one wins, so a stale release build is not used by mistake).
  *
@@ -21,6 +22,8 @@ export function findEngine(from: string = process.cwd(), env: NodeJS.ProcessEnv 
   const fromEnv = env["DIRACORD_ENGINE"];
   if (fromEnv) return existsSync(fromEnv) ? resolve(fromEnv) : null;
   const here = dirname(fileURLToPath(import.meta.url));
+  const shipped = join(here, "..", "bin", `${process.platform}-${process.arch}`, EXE);
+  if (existsSync(shipped)) return ensureExecutable(shipped);
   for (const start of [here, resolve(from)]) {
     let dir = start;
     for (;;) {
@@ -35,4 +38,19 @@ export function findEngine(from: string = process.cwd(), env: NodeJS.ProcessEnv 
     }
   }
   return null;
+}
+
+/** npm may unpack the binary without the executable bit; fix it if we can. */
+function ensureExecutable(path: string): string {
+  if (process.platform === "win32") return path;
+  try {
+    accessSync(path, constants.X_OK);
+  } catch {
+    try {
+      chmodSync(path, 0o755);
+    } catch {
+      // read-only install: spawning will report the problem
+    }
+  }
+  return path;
 }

@@ -8,11 +8,11 @@ export const site = {
   description:
     "Diracord é uma linguagem para criar bots de Discord: mais fácil que aoi.js, mais completa que um amontoado de $funções, e com erros que dizem exatamente o que corrigir.",
   /** Measured with the release build: `diracord-engine` resident memory while running 5000 commands. */
-  engineRamMb: 2.4,
+  engineRamMb: 2.5,
   /** Release binary size (KB). */
-  engineBinaryKb: 891,
+  engineBinaryKb: 987,
   /** Commands per second through the JSON protocol (one core, release build). */
-  runsPerSecond: 15000,
+  runsPerSecond: 12000,
   functions: 54,
   errorCodes: 47,
 } as const;

@@ -18,10 +18,12 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "node --test \"packages/*/test/*.test.ts\"",
     "build:engine": "cargo build --release -p diracord-engine",
-    "diracord": "node packages/cli/src/main.ts"
+    "diracord": "node packages/cli/src/main.ts",
+    "pack:npm": "node scripts/pack-npm.mjs"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "esbuild": "0.28.2"
   }
 }

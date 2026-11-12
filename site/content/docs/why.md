@@ -68,7 +68,7 @@ command("daily") {
 
 ### Leve e seguro
 
-O motor é escrito em Rust e usa por volta de 2 MB de memória. Cada execução tem limite de passos, tempo, memória e ações no Discord: um `while true { }` esquecido para com o erro E0205, em vez de travar o bot.
+O motor é escrito em Rust e usa menos de 3 MB de memória (medido rodando milhares de comandos). Cada execução tem limite de passos, tempo, memória e ações no Discord: um `while true { }` esquecido para com o erro E0205, em vez de travar o bot.
 
 ## Quando escolher outra coisa
 

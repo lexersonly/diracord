@@ -1,0 +1,91 @@
+# Builds the Rust engine for every platform and publishes the `diracord` npm package.
+#
+# Runs when a tag like v0.1.0 is pushed (or by hand from the Actions tab).
+# Needs the repository secret NPM_TOKEN (an npm "Automation" or granular token
+# with publish rights). Nothing is published from pull requests or branches.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish to npm (otherwise only build and upload the package as an artifact)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: engine (${{ matrix.key }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { key: linux-x64, os: ubuntu-latest, target: x86_64-unknown-linux-musl, musl: true }
+          - { key: linux-arm64, os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, musl: true }
+          - { key: darwin-arm64, os: macos-14, target: aarch64-apple-darwin }
+          - { key: darwin-x64, os: macos-14, target: x86_64-apple-darwin }
+          - { key: win32-x64, os: windows-latest, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - if: matrix.musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - run: cargo build --release -p diracord-engine --target ${{ matrix.target }}
+      - name: Stage binary
+        shell: bash
+        run: |
+          mkdir -p engines/${{ matrix.key }}
+          if [ "${{ matrix.key }}" = "win32-x64" ]; then exe=diracord-engine.exe; else exe=diracord-engine; fi
+          cp target/${{ matrix.target }}/release/$exe engines/${{ matrix.key }}/$exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-${{ matrix.key }}
+          path: engines
+
+  package:
+    needs: engine
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: engine-*
+          path: engines
+          merge-multiple: true
+      - run: npm ci
+      - name: Tag matches package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(node -p "require('./packages/diracord/package.json').version")
+          test "v$version" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$version"; exit 1; }
+      - run: node scripts/pack-npm.mjs --engines engines
+      - name: Smoke test the packed CLI (linux-x64)
+        run: |
+          cd npm-dist/diracord && npm pack
+          dir=$(mktemp -d) && cd "$dir" && npm init -y >/dev/null
+          npm install "$GITHUB_WORKSPACE"/npm-dist/diracord/diracord-*.tgz
+          npx diracord new bot && cd bot && npx diracord check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: npm-dist/diracord/diracord-*.tgz
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        run: npm publish npm-dist/diracord --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
