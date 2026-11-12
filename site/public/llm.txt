@@ -1,0 +1,438 @@
+# Diracord — referência para IAs (llm.txt)
+
+Diracord é uma linguagem de texto para criar bots de Discord. Este arquivo descreve a
+linguagem v0.1 exatamente como o motor atual a aceita. Ao escrever código Diracord, siga
+estas regras. Fonte da verdade: docs/SPEC.md; funções e erros abaixo são gerados do código.
+
+## 1. Projeto
+
+```
+meu-bot/
+  diracord.toml        # configuração
+  .env                 # DISCORD_TOKEN=... (nunca no código, nunca no git)
+  commands/ping.dcs    # qualquer arquivo .dcs, .dira ou .diracord em qualquer pasta
+  events/join.dcs
+```
+Todos os arquivos são carregados juntos. Não existe import.
+CLI: `diracord new <pasta>`, `diracord check [--fix]`, `diracord run`, `diracord watch`.
+
+diracord.toml (todas as chaves são opcionais; valores padrão mostrados):
+```toml
+ram = "100mb"
+[bot]
+name = "meu-bot"
+prefix = "!"
+[commands]
+prefix = true          # comandos com prefixo: !ping
+slash = true           # slash commands: /ping
+[syntax]
+dollar = false         # liga o atalho $ban[user;reason]
+[data]
+path = "data/bot.dirabank"
+default_scope = "user" # user | server | member | global
+[limits]
+time_ms = 3000
+steps = 100000
+memory_kb = 4096
+actions = 50
+[discord]
+intents = ["guilds", "guildMessages", "messageContent", "guildMembers"]
+```
+
+## 2. Léxico
+
+- Comentário: `//` até o fim da linha. Não existe comentário de bloco.
+- Nomes: letra ou `_`, depois letras, dígitos ou `_`. Diferencia maiúsculas: `memberJoin` ≠ `memberjoin`.
+- Palavras reservadas: command fn local if else for in while chain testing try catch
+  return stop break continue true false null and or not
+  (`button`, `menu` e `modal` só são especiais no topo do arquivo, como `button("id") { }`;
+  dentro do código, `button(...)` é a peça de Components v2.)
+- Números: `15`, `1.5`, `1_000`. Ids do Discord são TEXTO: `"123456789012345678"`.
+- Texto: só aspas duplas `"..."`, numa linha. Escapes: `\n \t \" \\ \$`.
+- Interpolação: `$nome` ou `$nome.campo.campo` dentro do texto. Para o símbolo $, use `\$`.
+  Não existe `${expr}`: para expressões, use `+` ou uma variável local.
+- Quebra de linha separa instruções. `;` também separa (para várias numa linha).
+
+## 3. Gramática (EBNF)
+
+```ebnf
+program     = { item } ;
+item        = command | event | interaction | function ;
+command     = "command" "(" STRING { "," param } [ "," ] ")" block ;
+param       = NAME ":" argtype [ "=" expr ] ;          (* com "= valor" fica opcional; opcionais no fim *)
+function    = "fn" NAME "(" [ fnparam { "," fnparam } ] ")" block ;
+fnparam     = NAME [ ":" argtype ] [ "=" expr ] ;      (* tipo opcional; opcionais no fim *)
+argtype     = "text" | "number" | "bool" | "member" | "user" | "channel" | "role" ;
+event       = EVENT_NAME block ;                       (* nome direto, sem palavra-chave *)
+interaction = ( "button" | "menu" | "modal" ) "(" STRING ")" block ;
+
+block       = "{" { stmt ( NEWLINE | ";" ) } "}" ;
+stmt        = "local" NAME "=" value
+            | target "=" value
+            | "if" cond block { "else" "if" cond block } [ "else" block ]
+            | "for" NAME "in" cond block
+            | "while" cond block
+            | "chain" cond "{" { arm [ "," ] } "}"
+            | "testing" block "catch" [ NAME ] block
+            | "return" [ value ]
+            | "stop" | "break" | "continue"
+            | value ;
+arm         = pattern "=>" ( block | stmt ) ;          (* vários casos podem ficar na mesma linha *)
+pattern     = "_" | ["-"] NUMBER | STRING_SEM_$ | "true" | "false" | "null" ;
+target      = NAME { "." NAME | "[" expr "]" } ;
+
+value       = bare_call | expr ;                       (* só onde a gramática diz "value" *)
+bare_call   = NAME arg { [ "," ] arg } ;               (* chamada SEM parênteses; termina na quebra de linha *)
+cond        = expr ;                                   (* em condições, "{" abre o bloco, não um objeto *)
+
+expr        = or ;
+or          = and { ( "||" | "or" ) and } ;
+and         = equality { ( "&&" | "and" ) equality } ;
+equality    = compare { ( "==" | "!=" ) compare } ;
+compare     = sum { ( "<" | "<=" | ">" | ">=" ) sum } ;
+sum         = product { ( "+" | "-" ) product } ;
+product     = unary { ( "*" | "/" | "%" ) unary } ;
+unary       = ( "-" | "!" | "not" ) unary | postfix ;
+postfix     = primary { "." NAME | "[" expr "]" | "(" [ arg { "," arg } [ "," ] ] ")" } ;
+              (* "[" de índice vem colado: lista[0]. "(" na mesma linha. *)
+primary     = NUMBER | STRING | "true" | "false" | "null" | NAME
+            | "(" expr ")" | "[" [ expr { "," expr } [","] ] "]"
+            | object | dollar_call ;
+object      = "{" { ( NAME | STRING ) ":" expr ( "," | NEWLINE ) } "}" ;
+arg         = [ NAME ":" ] expr ;                      (* argumento nomeado: scope: user *)
+dollar_call = "$" NAME [ "[" [ arg { ";" arg } ] "]" ] ;  (* só com [syntax] dollar = true *)
+
+```
+
+## 4. Regras de significado
+
+- `reply "hi"` == `reply("hi")`. Em chamada sem parênteses, os argumentos são separados por
+  espaço (vírgula opcional) e cada um é uma expressão completa: `reply "Hi " + user.name` OK.
+  Uma chamada dentro de outra precisa de parênteses: `reply upper("hi")`. ERRADO: `reply upper "hi"`.
+- Chamada sem parênteses só no começo da instrução, depois de `local x =`, `x =` e `return`.
+  Em `if`/`while`/`for`/`chain` use parênteses: `if hasRole(user, "VIP") { ... }`.
+- O nome de uma função sozinho é uma chamada sem argumentos: `deleteMessage`, `now`.
+- Variáveis: `local x = 1` cria (vale até o fim do bloco); `x = 2` muda uma que já existe.
+  Mudar campo/posição: `obj.campo = 1`, `list[0] = 1` (a posição precisa existir).
+- Tipos dinâmicos: null, bool, number (inteiro ou decimal), text, list, object.
+  Tipos só existem nos argumentos de `command(...)`.
+- Falso: `null`, `false`, `0`, `""`, `[]`. Todo o resto é verdadeiro.
+- `+` soma números; se um lado é texto, junta textos; listas concatenam.
+  `- * / %` só números. `7 / 2` = 3.5; `6 / 2` = 3. Dividir por 0 é erro E0203.
+- `==` compara por valor (`1 == 1.0` é true). `<` `>` funcionam entre números ou entre textos.
+- `and`/`or` (ou `&&`/`||`) param cedo e devolvem true/false.
+- `for x in list`, `for letter in "text"`, `for i in 5` (0..4), `for chave in objeto`.
+  Para intervalos: `for i in range(1, 6)` (1..5).
+- `chain x { 1 => reply "one"  "a" => reply "letter"  _ => reply "other" }`: o primeiro caso igual
+  ganha; `_` = qualquer outro e deve ser o último. Não há "fall-through".
+- `testing { ... } catch err { ... }`: `err` é o TEXTO da mensagem de erro. Erros de limite
+  (tempo, passos, memória, ações) NÃO podem ser pegos.
+- `stop` encerra o comando/evento. `return valor` também encerra. `break`/`continue` só em laços.
+- Embeds: `reply { title: "Oi", description: "...", color: "red", footer: "rodapé",
+  image: "https://...", thumbnail: "https://...", fields: [{ name: "a", value: "b", inline: true }],
+  timestamp: true }`. Cores: red green blue blurple yellow orange purple pink white black gray,
+  "#rrggbb" ou número.
+- Menções: o bot só menciona usuários (nunca @everyone/@here/cargos).
+
+## 4.1 Components v2
+
+Peças no estilo do discord.js: cada peça é uma função que devolve um valor, e uma vai
+dentro da outra. `reply`/`send` aceitam uma peça, uma lista de peças ou `{ layout: [...] }`.
+```dcs
+command("rules") {
+  reply container(
+    text("## Welcome, $user.name"),
+    section("Read the rules.", thumbnail: user.avatar),
+    separator(spacing: "large"),
+    row(button("accept", "Accept", style: "success"), button(label: "Website", url: "https://example.com")),
+    color: "purple"
+  )
+}
+```
+Onde cada peça pode ficar:
+- Na mensagem: container, section, row, text, separator, gallery, file.
+- Dentro de container(...): section, row, text, separator, gallery, file (NÃO container, NÃO button/menu soltos).
+- section(textos..., thumbnail: X ou button: Y): 1 a 3 textos e exatamente UM acessório.
+- row(...): até 5 button(...), OU um menu(...) sozinho.
+- button(id, label, ...) só em row(...) ou em section(button: ...). Com url: é link e não tem id.
+- O clique de button("id") / menu("id") roda o handler `button("id") { }` / `menu("id") { }` do topo do arquivo;
+  em menus, os escolhidos ficam em `message.values`.
+Layout não se mistura com texto ou embed: para texto, use text(...). Máximo 40 peças por mensagem.
+A forma objeto (para gerar por código) é equivalente:
+`reply { layout: [ { container: [ { text: "## Hi" }, { row: [ { button: "ok", label: "Ok" } ] } ], color: "purple" } ] }`
+
+## 4.2 Funções próprias (fn)
+
+```dcs
+fn giveCoins(who: member, amount: number = 1) {
+  local total = get("coins", 0, scope: user) + amount
+  set("coins", total, scope: user)
+  return total
+}
+
+fn greet(name) {
+  return "Hi $name"
+}
+
+command("daily") {
+  local total = giveCoins(user, 100)
+  reply greet(user.name) + "! You have $total coins."
+}
+```
+- Ficam no topo de qualquer arquivo e valem no projeto todo. Chamada igual às embutidas:
+  `giveCoins(user, 10)`, `giveCoins user 10`, `giveCoins(who: user, amount: 10)`.
+- Tipos são opcionais e iguais aos de `command` (text, number, bool, member, user, channel,
+  role). Com tipo, `"10"` vira `10`; tipo errado é E0302 apontando a chamada.
+- A função só enxerga os próprios argumentos, os próprios `local` e as variáveis automáticas
+  (`user`, `server`, `channel`, `message`). NÃO enxerga os `local` de quem chamou.
+- `return valor` devolve o resultado (sem `return`, devolve `null`). `stop` dentro da função
+  encerra o comando inteiro. Recursão é permitida, até 64 chamadas aninhadas (E0211).
+- Não pode ter o nome de uma função embutida (`fn reply(...)` é E0116). Use `fn`, não `function`.
+
+## 5. Variáveis automáticas
+
+Dentro de command, eventos e button/menu/modal:
+- `user` (alias `author`): quem disparou. Campos: id, name, username, mention, bot, avatar;
+  em servidor também nick, roles (lista de ids), joinedAt.
+- `server`: id, name (null em mensagem privada). Não existe `guild`: o nome é sempre `server`.
+- `channel`: id, mention (e name, type quando conhecidos).
+- `message`: id, content, channelId, authorId. Em interações, `interaction` = `message`;
+  em menus, `message.values` é a lista escolhida.
+- Em reactionAdd/reactionRemove: `reaction.emoji`. Em roleCreate/roleDelete: `role`.
+- Argumentos de `command` viram variáveis com o mesmo nome.
+
+Tipos de argumento de comando: text, number, bool, member, user, channel, role.
+No prefixo, o último argumento `text` recebe o resto da linha: `!ban @Joe link spam`.
+
+## 6. Eventos
+
+ready, messageCreate, messageUpdate, messageDelete, memberJoin, memberLeave, memberUpdate,
+reactionAdd, reactionRemove, channelCreate, channelDelete, roleCreate, roleDelete,
+voiceJoin, voiceLeave.
+Vários arquivos podem ter o mesmo evento: todos rodam, na ordem dos arquivos.
+
+## 7. Dados salvos (Dirabank)
+
+`get(nome, padrão?, scope?)`, `set(nome, valor, scope?)`, `delete(nome, scope?)`.
+Escopos: `user` (por usuário), `server` (por servidor), `member` (usuário dentro do
+servidor), `global` (um valor para o bot todo). Sem `scope:`, usa `[data] default_scope`.
+Em `scope: user`, `user` é a palavra do escopo, não a variável.
+```
+set("coins", get("coins", 0, scope: user) + 1, scope: user)
+```
+
+## 8. Limites de cada execução (padrão)
+
+100000 passos, 3 s de CPU (esperar o Discord não conta), 4 MB em variáveis,
+50 ações no Discord, 64 KB por valor salvo. Passar disso para a execução (E0204–E0206).
+Comandos: no máximo 5 por usuário a cada 10 s.
+
+## 9. Funções embutidas
+
+Formato: assinatura -> retorno : descrição. `?` = opcional. Todas aceitam argumentos
+por nome (`get("x", scope: user)`). Tipos: user/channel/role aceitam o objeto, o id em
+texto ou a menção (`<@id>`, `<#id>`, `<@&id>`); role aceita também o nome do cargo.
+
+```
+[messages]
+reply(content: text|embed, ephemeral?: bool) -> message : Responde à mensagem ou interação atual. Aceita texto ou embed.
+send(channel: channel, content: text|embed) -> message : Envia uma mensagem em um canal.
+dm(user: user, content: text|embed) -> message : Envia uma mensagem privada para um usuário.
+react(emoji: text) -> null : Reage à mensagem atual com um emoji.
+deleteMessage(message?: any) -> null : Apaga a mensagem atual (ou outra, pelo id).
+[moderation]
+ban(user: user, reason?: text) -> null : Bane um membro do servidor.
+unban(user: user, reason?: text) -> null : Tira o banimento de um usuário.
+kick(user: user, reason?: text) -> null : Expulsa um membro do servidor.
+timeout(user: user, seconds: number, reason?: text) -> null : Deixa um membro de castigo (sem falar) por alguns segundos. 0 tira o castigo.
+[roles]
+addRole(user: user, role: role) -> null : Dá um cargo para um membro.
+removeRole(user: user, role: role) -> null : Tira um cargo de um membro.
+hasRole(user: user, role: role) -> bool : Diz se um membro tem um cargo (true/false).
+[lookup]
+channel(query: any) -> channel : Procura um canal do servidor pelo nome, id ou menção. Devolve null se não achar.
+member(query: any) -> member : Procura um membro do servidor pelo id, menção ou nome. Devolve null se não achar.
+role(query: any) -> role : Procura um cargo pelo nome, id ou menção. Devolve null se não achar.
+[data]
+get(name: text, default?: any, scope?: scope) -> any : Lê um valor salvo. Se não existir, devolve o padrão (ou null).
+set(name: text, value: any, scope?: scope) -> null : Salva um valor (fica guardado mesmo depois de reiniciar o bot).
+delete(name: text, scope?: scope) -> bool : Apaga um valor salvo. Devolve true se existia.
+[text]
+upper(text: text) -> text : Texto em MAIÚSCULAS.
+lower(text: text) -> text : Texto em minúsculas.
+trim(text: text) -> text : Tira espaços do começo e do fim.
+len(value: any) -> number : Tamanho de um texto (em letras) ou de uma lista.
+replace(text: text, from: text, to: text) -> text : Troca todas as ocorrências de um pedaço do texto.
+split(text: text, separator?: text) -> list : Divide um texto em uma lista. Sem separador, divide nos espaços.
+startsWith(text: text, prefix: text) -> bool : Diz se o texto começa com outro.
+endsWith(text: text, suffix: text) -> bool : Diz se o texto termina com outro.
+contains(haystack: any, needle: any) -> bool : Diz se um texto contém outro, ou se uma lista contém um valor.
+[math]
+random(min?: number, max?: number) -> number : Número inteiro aleatório entre min e max (inclusive). Sem argumentos: entre 0 e 1 (decimal).
+round(number: number) -> number : Arredonda para o inteiro mais próximo.
+floor(number: number) -> number : Arredonda para baixo.
+ceil(number: number) -> number : Arredonda para cima.
+abs(number: number) -> number : Valor absoluto (sem sinal).
+min(a: number, b: number) -> number : O menor de dois números.
+max(a: number, b: number) -> number : O maior de dois números.
+[lists]
+push(list: list, value: any) -> list : Devolve uma nova lista com o valor no fim.
+join(list: list, separator?: text) -> text : Junta os itens de uma lista em um texto.
+first(list: list) -> any : Primeiro item da lista (ou null).
+last(list: list) -> any : Último item da lista (ou null).
+range(start: number, end?: number) -> list : Lista de números de start até end (sem incluir end). Com um argumento, de 0 até ele.
+reverse(value: any) -> any : Inverte uma lista ou um texto.
+[utility]
+typeOf(value: any) -> text : Nome do tipo de um valor: null, bool, number, text, list ou object.
+toNumber(value: any) -> number : Converte texto em número. Devolve null se não for número.
+toText(value: any) -> text : Converte qualquer valor em texto.
+now() -> number : Hora atual em milissegundos desde 1970 (Unix).
+[components]
+container(items...: component, color?: text, spoiler?: bool) -> component : Caixa com cor de destaque que agrupa outras peças.
+text(content: text) -> component : Texto (com markdown) dentro do layout.
+section(texts...: text, thumbnail?: any, button?: component) -> component : 1 a 3 textos com uma imagem pequena (thumbnail) ou um botão ao lado.
+thumbnail(url: text, description?: text, spoiler?: bool) -> component : Imagem pequena ao lado de uma section (use em thumbnail: quando precisar de opções).
+separator(spacing?: text, line?: bool) -> component : Espaço ou linha entre peças.
+gallery(images...: any) -> component : De 1 a 10 imagens grandes.
+file(url: text, spoiler?: bool) -> component : Mostra um arquivo enviado junto (attachment://nome).
+row(items...: component) -> component : Uma linha com até 5 botões, ou com um menu.
+button(id?: text, label?: text, style?: text, emoji?: text, disabled?: bool, url?: text) -> component : Um botão. O clique roda o button("id") { } com o mesmo id; com url, vira link.
+menu(id: text, options: list, placeholder?: text, min?: number, max?: number) -> component : Menu de opções. A escolha roda o menu("id") { }; os valores ficam em message.values.
+```
+
+## 10. Códigos de erro
+
+Cada erro tem código estável. Detalhes e correções: docs/errors.md.
+
+```
+E0001 texto sem fechar
+E0002 caractere inesperado
+E0003 número inválido
+E0004 escape inválido no texto
+E0005 variável vazia no texto
+E0100 símbolo inesperado
+E0101 chave sem fechar
+E0102 parêntese sem fechar
+E0103 faltou um valor
+E0104 faltou um nome
+E0105 faltou o bloco
+E0106 não dá para atribuir aqui
+E0107 tipo de argumento desconhecido
+E0108 atalho $ desligado
+E0109 comando sem nome
+E0110 caso inválido no chain
+E0111 colchete sem fechar
+E0112 argumento obrigatório depois de opcional
+E0113 evento desconhecido
+E0114 código solto
+E0115 break/continue fora de laço
+E0116 nome repetido
+E0117 peça do layout fora do lugar
+E0200 variável não existe
+E0201 função não existe
+E0202 tipo errado
+E0203 divisão por zero
+E0204 tempo esgotado
+E0205 passos demais
+E0206 memória esgotada
+E0207 isso não é uma função
+E0208 ação no Discord falhou
+E0209 campo ou posição não existe
+E0210 erro não tratado
+E0211 aninhamento demais
+E0300 faltou argumento
+E0301 argumentos demais
+E0302 argumento inválido
+E0303 argumento nomeado desconhecido
+E0400 erro no banco de dados
+E0401 escopo inválido
+E0402 escopo sem contexto
+E0500 diracord.toml não encontrado
+E0501 diracord.toml inválido
+E0502 token não encontrado
+E0503 nenhum arquivo de código
+E0504 motor não encontrado
+```
+
+## 11. Erros comuns (errado → certo)
+
+- `let x = 1` / `var x = 1` → `local x = 1` (E0100, corrigido por --fix)
+- `try { } catch err { }` → `testing { } catch err { }` (E0100, corrigido por --fix)
+- `function hi(x) { }` → `fn hi(x) { }` (E0100, corrigido por --fix)
+- `fn reply(x) { }` → escolha outro nome; `reply` é embutida (E0116)
+- usar dentro da `fn` uma variável `local` de quem chamou → passe como argumento (E0200)
+- `if x = 1 { }` → `if x == 1 { }` (E0100, corrigido por --fix)
+- `x = 1` sem criar antes → `local x = 1` (E0200, corrigido por --fix)
+- `rpely "hi"` → `reply "hi"` (E0201, com sugestão)
+- `memberjoin { }` → `memberJoin { }` (E0113, corrigido por --fix)
+- `command(ping) { }` → `command("ping") { }` (E0109)
+- `command("a", x: string)` → `command("a", x: text)` (E0107, corrigido por --fix)
+- `command("a", x: text = "", y: member)` → opcionais por último (E0112)
+- `reply 'hi'` → `reply "hi"` (aspas simples não existem, E0002)
+- `reply upper "hi"` → `reply upper("hi")` (chamada dentro de chamada)
+- `if hasRole user "VIP" { }` → `if hasRole(user, "VIP") { }`
+- `reply "Total: ${a + b}"` → `local t = a + b` e `reply "Total: $t"`, ou `reply "Total: " + (a + b)`
+- `"costs $5"` → `"costs \$5"` (E0005, corrigido por --fix)
+- `reply "hi"` fora de um command/evento → coloque dentro de `command("x") { ... }` (E0114)
+- `$ban[user;reason]` com o atalho desligado → `ban(user, reason)` (E0108, corrigido por --fix)
+  ou ligue `[syntax] dollar = true`
+- `user.nmae` → `user.name` (E0209, com sugestão)
+- `list.length` → `len(list)`
+- `chain x { _ => ...  1 => ... }` → `_` sempre por último (E0110)
+- `break` fora de for/while → `stop` (E0115)
+- `get("x", scope: guild)` → `scope: server` (E0401)
+- `guild.name` / `$guild.name` / `scope: guild` → `server` (E0200/E0401, corrigido por --fix)
+- `reply container(button("a", "A"))` → `reply container(row(button("a", "A")))` (E0117, seta no botão)
+- `section("a")` sem acessório → `section("a", thumbnail: url)` ou `section("a", button: button("b", "B"))`
+- `container("loose text")` → `container(text("loose text"))`
+- `reply "Hi", row(...)` → `reply [text("Hi"), row(...)]` (layout não mistura com texto solto)
+- Ids grandes como número (`123456789012345678901`) → use texto `"123..."` (E0003)
+
+## 12. Exemplos
+
+```dcs
+command("ping") {
+  reply "Pong!"
+}
+
+command("ban", user: member, reason: text = "no reason") {
+  testing {
+    ban user reason
+    reply "$user.name was banned. Reason: $reason"
+  } catch err {
+    reply "Could not ban: $err"
+  }
+}
+
+command("dice", sides: number = 6) {
+  local n = random(1, sides)
+  chain n {
+    1 => reply "1... bad luck!"
+    _ => reply "You rolled $n"
+  }
+}
+
+command("profile") {
+  reply {
+    title: "Profile of $user.name"
+    color: "blurple"
+    fields: [{ name: "Coins", value: get("coins", 0, scope: user), inline: true }]
+  }
+}
+
+memberJoin {
+  local ch = channel("welcome")
+  if ch {
+    send ch "Welcome, $user.mention!"
+  }
+}
+
+button("confirm") {
+  reply "Confirmed!" ephemeral: true
+}
+```
+
+## 13. Ainda NÃO existe (não use)
+
+- Plugins WASM.
+- Funções como valor (`local f = giveCoins`): funções só podem ser chamadas.

@@ -1,0 +1,25 @@
+import { cn } from "@/lib/utils";
+
+/** Diracord mark: a chrome four-point star inside a rounded square. */
+export function Logo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={cn("shrink-0", className)} aria-hidden>
+      <defs>
+        <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#2a2a2a" />
+          <stop offset="100%" stopColor="#0a0a0a" />
+        </linearGradient>
+        <linearGradient id="logo-star" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="55%" stopColor="#9a9a9a" />
+          <stop offset="100%" stopColor="#ededed" />
+        </linearGradient>
+      </defs>
+      <rect x="0.5" y="0.5" width="31" height="31" rx="9" fill="url(#logo-bg)" stroke="rgb(255 255 255 / 0.15)" />
+      <path
+        d="M16 5 C16.8 12.5 19.5 15.2 27 16 C19.5 16.8 16.8 19.5 16 27 C15.2 19.5 12.5 16.8 5 16 C12.5 15.2 15.2 12.5 16 5 Z"
+        fill="url(#logo-star)"
+      />
+    </svg>
+  );
+}
