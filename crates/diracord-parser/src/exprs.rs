@@ -202,10 +202,7 @@ impl Parser<'_> {
             if self.eat(&TokenKind::RParen) {
                 return Ok(args);
             }
-            if matches!(
-                self.kind(),
-                TokenKind::Eof | TokenKind::RBrace | TokenKind::LBrace
-            ) {
+            if matches!(self.kind(), TokenKind::Eof | TokenKind::RBrace) {
                 self.close_paren(open)?;
                 return Ok(args);
             }

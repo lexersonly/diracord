@@ -469,3 +469,11 @@ fn function_keyword_mistakes() {
     assert_eq!(codes_of("fn hi(a: string) { }"), [codes::E0107]);
     assert_eq!(codes_of("fn hi(a, a) { }"), [codes::E0116]);
 }
+
+#[test]
+fn objects_inside_parentheses() {
+    assert_eq!(
+        body("set(\"profile\", { bio: bio, since: now() }, scope: user)\nreply({ title: \"x\" })"),
+        "(set \"profile\" {bio:bio since:(now)} scope:user)\n(reply {title:\"x\"})"
+    );
+}

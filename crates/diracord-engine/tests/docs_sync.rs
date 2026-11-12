@@ -69,10 +69,18 @@ fn llm_txt_lists_every_function_and_code() {
 #[test]
 fn every_dcs_example_in_the_docs_is_valid() {
     let mut files = vec!["llm.txt".to_string(), "README.md".to_string()];
-    for entry in std::fs::read_dir(root().join("docs")).unwrap() {
-        let p = entry.unwrap().path();
-        if p.extension().is_some_and(|x| x == "md") {
-            files.push(format!("docs/{}", p.file_name().unwrap().to_string_lossy()));
+    for dir in ["docs", "site/content/docs"] {
+        let Ok(entries) = std::fs::read_dir(root().join(dir)) else {
+            continue;
+        };
+        for entry in entries {
+            let p = entry.unwrap().path();
+            if p.extension().is_some_and(|x| x == "md") {
+                files.push(format!(
+                    "{dir}/{}",
+                    p.file_name().unwrap().to_string_lossy()
+                ));
+            }
         }
     }
     let mut checked = 0;
@@ -81,9 +89,14 @@ fn every_dcs_example_in_the_docs_is_valid() {
             continue;
         }
         for (i, block) in dcs_blocks(&read(&f)).into_iter().enumerate() {
+            // Blocks that show the aoi.js-style `$name[...]` shortcut run with it turned on.
+            let dollar = block.split('$').skip(1).any(|t| {
+                let name: String = t.chars().take_while(|c| c.is_alphanumeric()).collect();
+                !name.is_empty() && t[name.len()..].starts_with('[')
+            });
             let a = Analysis::new(
                 &[(format!("{f}#{i}"), block.clone())],
-                &ParseOptions::default(),
+                &ParseOptions { dollar },
             );
             assert!(
                 a.diagnostics.is_empty(),
@@ -93,5 +106,32 @@ fn every_dcs_example_in_the_docs_is_valid() {
             checked += 1;
         }
     }
-    assert!(checked >= 5, "poucos exemplos verificados: {checked}");
+    assert!(checked >= 40, "poucos exemplos verificados: {checked}");
+}
+
+#[test]
+fn site_copies_of_generated_docs_are_up_to_date() {
+    if !root().join("site/public/llm.txt").exists() {
+        return;
+    }
+    assert_eq!(
+        read("site/public/llm.txt"),
+        read("llm.txt"),
+        "site/public/llm.txt desatualizado: rode `npm run sync-docs` em site/"
+    );
+    let functions = read("site/content/docs/reference-functions.md");
+    for f in diracord_functions::registry().iter() {
+        assert!(
+            functions.contains(&f.signature()),
+            "site desatualizado: falta {} (rode npm run sync-docs em site/)",
+            f.signature()
+        );
+    }
+    let errors = read("site/content/docs/reference-errors.md");
+    for c in diracord_diagnostics::codes::ALL {
+        assert!(
+            errors.contains(&format!("{c} — {}", c.title)),
+            "site desatualizado: falta {c} (rode npm run sync-docs em site/)"
+        );
+    }
 }
